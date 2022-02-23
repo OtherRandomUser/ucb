@@ -1,0 +1,7 @@
+@str = const "hello!\n"
+
+i32 @main()
+{
+    %0 = call i32 @ucb_linux_write(0, @str, 7)
+    ret i32 0
+}

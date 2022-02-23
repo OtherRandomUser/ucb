@@ -1,0 +1,23 @@
+i32 @fat(i32 %n)
+{
+    %n.ref = alloc i32
+    store i32 %n ^i32 %n.ref
+    %n.0 = load i32 ^i32 %n.ref
+    %cnd.0 = cmp le i32 %n.0 1
+    brc bool %cnd.0 %if_then %if_else
+
+if_then:
+    ret i32 1
+    br %if_end
+
+if_else:
+    %n.1 = load i32 ^i32 %n.ref
+    %tmp.0 = sub i32 %n.1 1
+    %tmp.1 = call i32 @fat(%tmp.0)
+    %n.2 = load i32 ^i32 %n.ref
+    %tmp.2 = mul i32 %n.2 %tmp.1
+    ret i32 %tmp.2
+    br %if_end
+
+if_end:
+}
