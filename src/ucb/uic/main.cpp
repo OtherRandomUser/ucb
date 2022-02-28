@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <ucb/frontend/lexer.hpp>
 #include <ucb/frontend/parser.hpp>
 
 #include <boost/program_options.hpp>
@@ -40,7 +41,7 @@ int main(int argc, char **argv)
 
     po::notify(vm);
 
-    std::cout << vm["input-file"].as<std::string>() << std::endl;
+    frontend::Lexer lex(vm["input-file"].as<std::string>(), true);
 
     return EXIT_SUCCESS;
 }
