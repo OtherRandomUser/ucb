@@ -4,9 +4,14 @@ target_sources(ucb-frontend
         parser.hpp
     PRIVATE
         lexer.cpp
+        parser.cpp
 )
 
 target_include_directories(ucb-frontend
     PUBLIC
         ${CMAKE_SOURCE_DIR}/src
+)
+
+target_link_libraries(ucb-frontend
+    fmt::fmt
 )

@@ -111,6 +111,7 @@ namespace ucb::frontend
         Token _read_numeric_tk();
         std::string _eat_id();
 
+        std::string_view _build_lexema();
         Token _build_tk(TokenType ty);
     };
 }

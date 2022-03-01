@@ -4,6 +4,21 @@
 #include <fstream>
 #include <unordered_map>
 
+#include <fmt/core.h>
+
+#define DEBUG(T, ...) \
+    if (_print_debug) { fmt::print(stderr, "Lexer: " T __VA_OPT__(,) __VA_ARGS__); }
+
+#define DEBUG_LOC(T, ...) \
+    if (_print_debug) { fmt::print(stderr, "Lexer: {}:{}:{} " T, _filename, _row, _col __VA_OPT__(,) __VA_ARGS__); }
+
+#define ERROR(T, ...) \
+    { \
+        fmt::print(stderr, "Lexer: " T __VA_OPT__(,) __VA_ARGS__); \
+        fmt::print(stderr, "\t cursor at {}:{}:{}", _filename, _head_row, _head_col); \
+        abort(); \
+    }
+
 namespace ucb::frontend
 {
     static std::unordered_map<std::string, TokenType> KEYWORD_TBL = {{
@@ -133,18 +148,21 @@ namespace ucb::frontend
             if (is_op(c))
             {
                 _cursor++;
+                DEBUG_LOC("read op token with lexema '{}'", _build_lexema());
                 return _build_tk(static_cast<TokenType>(c));
             }
 
             if (c == '@')
             {
                 _eat_id();
+                DEBUG_LOC("read global id token with lexema '{}'", _build_lexema());
                 return _build_tk(TokenType::ID_GLOBAL);
             }
 
             if (c == '%')
             {
                 _eat_id();
+                DEBUG_LOC("read local id token with lexema '{}'", _build_lexema());
                 return _build_tk(TokenType::ID_LOCAL);
             }
 
@@ -152,9 +170,15 @@ namespace ucb::frontend
             auto ty = KEYWORD_TBL.find(id);
 
             if (ty != KEYWORD_TBL.end())
+            {
+                DEBUG_LOC("read keyword token with lexema '{}'", _build_lexema());
                 return _build_tk(ty->second);
+            }
             else
+            {
+                DEBUG_LOC("read other token with lexema '{}'", _build_lexema());
                 return _build_tk(TokenType::ID_OTHER);
+            }
         }
 
         return {
@@ -166,6 +190,8 @@ namespace ucb::frontend
 
     Token Lexer::_read_whitespace_tk()
     {
+        DEBUG("Reading whitespace token");
+
         while (_cursor != _src.end())
         {
             auto c = *_cursor;
@@ -183,11 +209,14 @@ namespace ucb::frontend
             }
         }
 
+        DEBUG_LOC("read whitespace token");
         return _build_tk(TokenType::WHITESPACE);
     }
 
     Token Lexer::_read_comment_ln_tk()
     {
+        DEBUG("Reading comment line token");
+
         while (_cursor != _src.end())
         {
             auto c = *_cursor;
@@ -204,12 +233,14 @@ namespace ucb::frontend
             }
         }
 
-        std::cerr << "Lexer Error: expected new line but found end of file" << std::endl;
-        abort();
+        DEBUG_LOC("read comment line token with lexema '{}'", _build_lexema());
+        ERROR("expected new line but found end of file");
     }
 
     Token Lexer::_read_str_tk()
     {
+        DEBUG("Reading string literal token");
+
         while (_cursor != _src.end())
         {
             auto c = *_cursor;
@@ -221,12 +252,14 @@ namespace ucb::frontend
                 return _build_tk(TokenType::LT_STRING);
         }
 
-        std::cerr << "Lexer Error: expected '\"' but found end of file" << std::endl;
-        abort();
+        DEBUG_LOC("read string literal token with lexema '{}'", _build_lexema());
+        ERROR("expected '\"' but found end of file");
     }
 
     Token Lexer::_read_numeric_tk()
     {
+        DEBUG("Reading numeric token");
+
         while (_cursor != _src.end())
         {
             auto c = *_cursor;
@@ -244,7 +277,10 @@ namespace ucb::frontend
                     _col++;
 
                     if (d < '0' || d > '9')
+                    {
+                        DEBUG_LOC("read floating point literal with lexema '{}'", _build_lexema());
                         return _build_tk(TokenType::LT_FLOAT);
+                    }
                 }
             }
 
@@ -252,6 +288,7 @@ namespace ucb::frontend
                 break;
         }
 
+        DEBUG_LOC("read integer literal with lexema '{}'", _build_lexema());
         return _build_tk(TokenType::LT_INT);
     }
 
@@ -271,6 +308,11 @@ namespace ucb::frontend
         }
 
         return std::string(start, _cursor);
+    }
+
+    std::string_view Lexer::_build_lexema()
+    {
+        return std::string_view(_head_cursor, _cursor);
     }
 
     Token Lexer::_build_tk(TokenType ty)
