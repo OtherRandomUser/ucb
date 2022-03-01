@@ -83,7 +83,9 @@ namespace ucb::frontend
             || c == '}'
             || c == ','
             || c == '='
-            || c == ';';
+            || c == ';'
+            || c == '('
+            || c == ')';
     }
 
     Lexer::Lexer(std::string filename, bool print_debug):
@@ -142,7 +144,7 @@ namespace ucb::frontend
             if (c == '"')
                 return _read_str_tk();
 
-            if (c >= 0 && c <= 9)
+            if (c >= '0' && c <= '9')
                 return _read_numeric_tk();
 
             if (is_op(c))
