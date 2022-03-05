@@ -14,7 +14,7 @@
 
 #define ERROR(T, ...) \
     { \
-        fmt::print(stderr, "Lexer: " T __VA_OPT__(,) __VA_ARGS__); \
+        fmt::print(stderr, "Lexer Error: " T __VA_OPT__(,) __VA_ARGS__); \
         fmt::print(stderr, "\t cursor at {}:{}:{}", _filename, _head_row, _head_col); \
         abort(); \
     }
@@ -34,6 +34,7 @@ namespace ucb::frontend
         {"shl", TokenType::OP_SHL},
         {"shr", TokenType::OP_SHR},
         {"cast", TokenType::OP_CAST},
+        {"cmp", TokenType::OP_CMP},
         {"br", TokenType::OP_BR},
         {"brc", TokenType::OP_BRC},
         {"alloc", TokenType::OP_ALLOC},

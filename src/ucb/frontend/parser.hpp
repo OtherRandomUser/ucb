@@ -10,7 +10,8 @@ namespace ucb::frontend
     {
     public:
         Parser(std::string filename, bool debug_lexer, bool debug_parser):
-            _lex(std::move(filename), debug_lexer),
+            _filename(std::move(filename)),
+            _lex(_filename, debug_lexer),
             _debug(debug_parser)
         {
         }
@@ -18,7 +19,33 @@ namespace ucb::frontend
         bool parse_unit();
 
     private:
+        std::string _filename;
         Lexer _lex;
+        Token _cur;
         bool _debug;
+
+        bool _parse_def();
+        bool _parse_global();
+        bool _parse_func();
+        bool _parse_param_defs();
+        bool _parse_statement();
+        bool _parse_label();
+        bool _parse_assign_statement();
+        bool _parse_store();
+        bool _parse_br();
+        bool _parse_brc();
+        bool _parse_ret();
+        bool _parse_bin_op();
+        bool _parse_unnary_op();
+        bool _parse_cast();
+        bool _parse_alloc();
+        bool _parse_load();
+        bool _parse_call();
+        bool _parse_cmp();
+
+        bool _parse_ty();
+        bool _parse_opnd();
+
+        Token _bump();
     };
 };

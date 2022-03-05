@@ -2,6 +2,7 @@ target_sources(ucb-frontend
     PUBLIC
         lexer.hpp
         parser.hpp
+        token.hpp
     PRIVATE
         lexer.cpp
         parser.cpp
