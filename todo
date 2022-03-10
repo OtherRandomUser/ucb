@@ -1,0 +1,18 @@
+-- kind of necessary -- 
+* make ir objects
+    * write verify methods
+    * write dump methods
+    * integrate with parser
+* compile api
+* instruction selection pass
+*  register allocation pass
+* code emission
+
+-- important, but skipable --
+* integrate debug info
+
+-- nice to have --
+* quality of life features
+* unit tests
+* integration tests
+* documentation

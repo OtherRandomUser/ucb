@@ -11,6 +11,7 @@ target_include_directories(uic
 )
 
 target_link_libraries(uic
+    ucb-core
     ucb-frontend
     ${Boost_LIBRARIES}
 )

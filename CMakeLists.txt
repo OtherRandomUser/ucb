@@ -15,7 +15,7 @@ message(STATUS "Using Catch2 ${Catch2_VERSION}")
 find_package(Boost REQUIRED filesystem program_options)
 message(STATUS "Using Boost ${Boost_VERSION}")
 
-# add_library(ucb-core STATIC "")
+add_library(ucb-core STATIC "")
 add_library(ucb-frontend STATIC "")
 add_executable(uic "")
 

@@ -14,5 +14,6 @@ target_include_directories(ucb-frontend
 )
 
 target_link_libraries(ucb-frontend
+    ucb-core
     fmt::fmt
 )
