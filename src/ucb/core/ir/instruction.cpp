@@ -85,7 +85,7 @@ namespace ucb
         return "instruction";
     }
 
-    void verify() const
+    void Instruction::verify() const
     {
         /* TODO do this after dump is working
         switch(_op)
@@ -117,103 +117,17 @@ namespace ucb
 
     Operand& Instruction::add_operand(Operand *opnd)
     {
-        assert(opnd);
-
-        if (_head == nullptr)
-        {
-            _head = opnd;
-            _tail = opnd;
-            return *opnd;
-        }
-
-        _tail->_next = opnd;
-        _tail = opnd;
-        return *opnd;
+            
     }
 
     Operand& insert_operand(Operand *opnd, int idx)
     {
-        assert(opnd);
 
-        auto it = begin();
-        count = 0;
-
-        if (idx == 0)
-        {
-            opnd->_next = _head;
-            _head = opnd;
-
-            if (_tail == nullptr)
-            {
-                _tail = _head;
-            }
-
-            return;
-        }
-
-        while (it != end())
-        {
-            if (count == idx - 1)
-            {
-                opnd->_next = it->_next;
-                it->next = opnd;
-
-                if (it == _tail)
-                {
-                    _tail = _opnd;
-                }
-
-                return;
-            }
-
-            it++;
-        }
-
-        std::cerr << "operand index out of bounds" << std::endl;
-        abort();
     }
 
     void remove_operand(Operand *opnd)
     {
-        assert(opnd);
-
-        auto it = begin();
-        int count = 0;
-
-        if (idx == 0 && _head != nullptr)
-        {
-            auto aux = _head;
-            _head = _head->_next;
-            delete aux;
-            return;
-        }
-
-        while (it != end())
-        {
-            if (count == idx - 1)
-            {
-                auto aux = it->_next;
-
-                if (aux == nullptr)
-                {
-                    break;
-                }
-
-                it->_next = aux;
-
-                if (aux == _tail)
-                {
-                    _tail == it;
-                }
-
-                delete aux;
-            }
-
-            it++;
-        }
-
-        std::cerr << "operand index out of bounds" << std::endl;
-        abort();
+            
     }
 
     OperandIterator begin()

@@ -114,7 +114,7 @@ namespace ucb
             _cur = _cur->_next;
             return OperandIterator(cur);
         }
-    }
+    };
 
     enum InstrOpcode
     {
@@ -155,7 +155,7 @@ namespace ucb
 
         BasicBlock* parent() { return _parent; }
         const BasicBlock* parent() const { return _parent; }
-        InstrOpcode op() const { return op; }
+        InstrOpcode op() const { return _op; }
         Type* ty() { return _ty; }
         const Type* ty() const { return _ty; }
 

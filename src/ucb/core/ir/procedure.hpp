@@ -2,6 +2,10 @@
 
 namespace ucb
 {
+    class ProcedureSignature
+    {
+    };
+
     class Procedure
     {
     public:

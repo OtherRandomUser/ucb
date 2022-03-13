@@ -11,6 +11,9 @@ namespace ucb
     public:
         CompileUnit();
 
+        add_procedure(signature, identifier)
+        get_procedure(identifier)
+
         template<typename... ARGS>
         IntegralTy *get_int_ty(ARGS&&... args)
         {
