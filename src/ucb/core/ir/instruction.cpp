@@ -2,44 +2,41 @@
 
 #include <cassert>
 
+#include <ucb/core/ir/type.hpp>
+
 namespace ucb
 {
-    static Operand* Operand::MakeSentinel()
-    {
-        return new Operand(OT_SENTINEL, nullptr, false);
-    }
-
-    static Operand* Operand::MakeVirtualReg(VirtualRegister *reg, bool is_def)
+    Operand* Operand::MakeVirtualReg(VirtualRegister *reg, bool is_def)
     {
         assert(reg && "Virtual register is null");
         auto opnd = new Operand(OT_VIRTUAL_REG, reg->ty(), is_def);
-        opnd._virtual_reg = reg;
+        opnd->_virtual_reg = reg;
         return opnd;
     }
 
-    static Operand* Operand::MakeBasicBlock(BasicBlock *bblock)
+    Operand* Operand::MakeBasicBlock(BasicBlock *bblock)
     {
-        assert(reg && "Basic Block is null");
+        assert(bblock && "Basic Block is null");
         auto opnd = new Operand(OT_BASIC_BLOCK, nullptr, false);
-        opnd._bblock = bblock;
+        opnd->_bblock = bblock;
         return opnd;
     }
 
-    static Operand* Operand::MakeIntegerConst(long int val, Type *ty)
+    Operand* Operand::MakeIntegerConst(long int val, Type *ty)
     {
         assert(ty && "Type is null");
-        assert(ty->as_int_ty()->kind() == IK_FLOAT && "expected an integer type but got float");
+        assert(ty->as_int_ty()->ikind() == IntegralTy::IK_FLOAT && "expected an integer type");
         auto opnd = new Operand(OT_INTEGER_CONST, ty, false);
-        opnd._integer_val = val; 
+        opnd->_integer_val = val; 
         return opnd;
     }
 
-    static Operand* Operand::MakeFloatConst(double val, Type *ty)
+    Operand* Operand::MakeFloatConst(double val, Type *ty)
     {
         assert(ty && "Type is null");
-        assert(ty->as_int_ty()->kind() != IK_FLOAT && "expected a float type but got float");
+        assert(ty->as_int_ty()->ikind() != IntegralTy::IK_FLOAT && "expected a float type");
         auto opnd = new Operand(OT_FLOAT_CONST, ty, false);
-        opnd._float_val = val; 
+        opnd->_float_val = val; 
         return opnd;
     }
 
@@ -113,30 +110,5 @@ namespace ucb
         case OP_CALL:
         case OP_RET
         }*/
-    }
-
-    Operand& Instruction::add_operand(Operand *opnd)
-    {
-            
-    }
-
-    Operand& insert_operand(Operand *opnd, int idx)
-    {
-
-    }
-
-    void remove_operand(Operand *opnd)
-    {
-            
-    }
-
-    OperandIterator begin()
-    {
-        return OperandIterator(_head);
-    }
-
-    OperandIterator end()
-    {
-        return OperandIterator(nullptr);
     }
 }

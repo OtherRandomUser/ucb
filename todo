@@ -1,5 +1,6 @@
 -- kind of necessary -- 
 * make ir objects
+    * finish representation
     * write verify methods
     * write dump methods
     * integrate with parser
@@ -16,3 +17,6 @@
 * unit tests
 * integration tests
 * documentation
+* data oriented design
+* pointer wrappers/handles
+* custom allocator

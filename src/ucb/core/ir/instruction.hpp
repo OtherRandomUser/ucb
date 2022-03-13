@@ -3,6 +3,8 @@
 #include <iterator>
 #include <string>
 
+#include <ucb/core/ir/dilist.hpp>
+#include <ucb/core/ir/ilist.hpp>
 #include <ucb/core/ir/type.hpp>
 #include <ucb/core/ir/virtual-register.hpp>
 
@@ -25,7 +27,7 @@ namespace ucb
         OT_BASIC_BLOCK
     };
 
-    class Operand
+    class Operand : public IListNode<Operand>
     {
     public:
         friend OperandIterator;
@@ -141,7 +143,9 @@ namespace ucb
         OP_RET
     };
 
-    class Instruction
+    class Instruction :
+        public IList<Operand>,
+        public DIListNode<Instruction>
     {
     public:
         Instruction(BasicBlock *parent, InstrOpcode op):
@@ -159,22 +163,9 @@ namespace ucb
         Type* ty() { return _ty; }
         const Type* ty() const { return _ty; }
 
-        Operand& add_operand(Operand *opnd);
-        Operand& insert_operand(Operand *opnd, int idx);
-        void remove_operand(Operand *opnd);
-
-        OperandIterator begin();
-        OperandIterator end();
-
     private:
         BasicBlock *_parent;
         InstrOpcode _op;
         Type * _ty;
-
-        Operand *_head;
-        Operand *_tail;
-
-        Instruction *_next;
-        Instruction *_prev;
     };
 }
