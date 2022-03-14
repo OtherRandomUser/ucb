@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <ucb/core/ir/procedure.hpp>
 #include <ucb/core/ir/type.hpp>
 
 namespace ucb
@@ -11,8 +12,8 @@ namespace ucb
     public:
         CompileUnit();
 
-        add_procedure(signature, identifier)
-        get_procedure(identifier)
+        Procedure* add_procedure(signature, std::string identifier);
+        Procedure* get_procedure(std::string identifier);
 
         template<typename... ARGS>
         IntegralTy *get_int_ty(ARGS&&... args)

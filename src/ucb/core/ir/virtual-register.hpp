@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include <ucb/core/ir/ilist.hpp>
 #include <ucb/core/ir/type.hpp>
 
 namespace ucb
@@ -10,11 +11,18 @@ namespace ucb
     class Procedure;
     class Instruction;
 
-    class VirtualRegister
+    class VirtualRegister : public IListNode<VirtualRegister>
     {
     public:
         friend Procedure;
         friend Instruction;
+
+        VirtualRegister(Procedure *parent, std::string id, Type *ty):
+            _parent{parent},
+            _id{std::move(id)},
+            _ty{ty}
+        {
+        }
 
         Procedure* parent() { return _parent; }
         const Procedure* parent() const { return _parent; }

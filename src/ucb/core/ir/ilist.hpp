@@ -27,6 +27,17 @@ namespace ucb
         {
         }
 
+        ~IList()
+        {
+            auto it = begin();
+
+            while (it != end())
+            {
+                delete it;
+                it++;
+            }
+        }
+
         IListIterator<T> begin() { return IListIterator<T>(_head); }
 
         IListIterator<T> end() { return IListIterator<T>(_head); }

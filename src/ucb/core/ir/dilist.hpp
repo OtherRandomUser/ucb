@@ -25,6 +25,17 @@ namespace ucb
         {
         }
 
+        ~DIList()
+        {
+            auto it = begin();
+
+            while (it != end())
+            {
+                delete it;
+                it++;
+            }
+        }
+
         DIListIterator<T> begin() { return DIListIterator<T>(nullptr, _head); }
         DIListIterator<T> end() { return DIListIterator<T>(_tail, nullptr); }
 

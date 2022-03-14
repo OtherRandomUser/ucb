@@ -18,7 +18,6 @@ namespace ucb
 
     enum OperandTy : int
     {
-        OT_SENTINEL,
         OT_VIRTUAL_REG,
         // OT_GLOBAL_VARIABLE,
         // OT_STRING_LITERAL,
@@ -33,13 +32,11 @@ namespace ucb
         friend OperandIterator;
         friend Instruction;
 
-        static Operand* MakeSentinel();
         static Operand* MakeVirtualReg(VirtualRegister *reg, bool is_def);
         static Operand* MakeBasicBlock(BasicBlock *bblock);
         static Operand* MakeIntegerConst(long int val, Type *ty);
         static Operand* MakeFloatConst(double val, Type *ty);
 
-        bool is_sentinel() const { return _ty == OT_SENTINEL; }
         bool is_value() const { return _ty == OT_VIRTUAL_REG || _ty == OT_INTEGER_CONST || _ty == OT_FLOAT_CONST; }
         bool is_const() const { return _ty == OT_INTEGER_CONST || _ty == OT_FLOAT_CONST; }
 
@@ -66,7 +63,6 @@ namespace ucb
         OperandTy _ty;
         const Type *_vt;
         bool _is_def;
-        Operand *_next;
 
         union
         {
