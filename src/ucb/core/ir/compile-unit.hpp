@@ -70,5 +70,6 @@ namespace ucb
         std::vector<IntegralTy> _integral_tys;
         std::vector<PtrTy> _ptr_tys;
         std::vector<ArrayTy> _array_tys;
+        std::vector<std::shared_ptr<Procedure>> _procs;
     };
 }

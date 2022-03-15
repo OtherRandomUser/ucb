@@ -1,6 +1,7 @@
 #include <ucb/frontend/parser.hpp>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include <fmt/core.h>
@@ -512,41 +513,139 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_ty()
+    bool Parser::_parse_ty(Type *ty)
     {
+        ty = nullptr;
+
         if (_cur.ty == TokenType::ID_OTHER && _cur.lexema == "array")
         {
             auto sz = _bump();
             CHECK_TK(sz, sz.ty == TokenType::LT_INT, "an integer literal");
 
-            _bump();
+            auto of = _bump();
+            CHECK_TK(of, of.ty == TokenType::ID_OTHER && of.lexema == "of", "of");
+
+            Type *sub = nullptr;
+            if (!_parse_ty(sub))
+            {
+                return false;
+            }
+
+            ty = _compile_unit->get_array_ty(sub, std::stoi(sz.lexema));
+            return true;
         }
 
         while (_cur.ty == '^')
         {
             _bump();
+
+            Type *sub;
+            if (!_parse_ty(sub))
+            {
+                return false;
+            }
+
+            ty = _compile_unit->get_ptr_ty(sub);
+            return true;
         }
 
         CHECK_TK(_cur, tk_is_type(_cur), "a type identifier");
         _bump();
+
+        switch(_cur)
+        {
+        default:
+            return false;
+
+        case TY_VOID:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_VOID, 0);
+            break;
+
+        case TY_BOOL:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_BOOL, 1);
+            break;
+
+        case TY_I8:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 8);
+            break;
+
+        case TY_I16:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 16);
+            break;
+
+        case TY_I32:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 32);
+            break;
+
+        case TY_I64:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 64);
+            break;
+
+        case TY_U8:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 8);
+            break;
+
+        case TY_U16:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 16);
+            break;
+
+        case TY_U32:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 32);
+            break;
+
+        case TY_U64:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 64);
+            break;
+
+        case TY_F32:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_FLOAT, 32);
+            break;
+
+        case TY_F64:
+            ty = _compile_unit->get_int_ty(IntegralKind::IK_FLOAT, 64);
+            break;
+        }
+
         return true;
     }
 
-    bool Parser::_parse_opnd()
+    bool Parser::_parse_opnd(Operand *op, Type *ty)
     {
         if (_cur.ty == TokenType::ID_LOCAL)
+        {
+            op = _proc->operand_from_id(_cur.lexema);
+
+            if (op == nullptr)
+            {
+                return false;
+            }
+
+            _bump();
+            return true;
+        }
+
+        if (_cur.ty == TokenType::LT_INT)
         {
             _bump();
             return true;
         }
 
-        if (_cur.ty == TokenType::LT_INT   ||
-            _cur.ty == TokenType::LT_FLOAT ||
+        if (_cur.ty == TokenType::LT_INT
+            _cur.ty == TokenType::LT_FLOAT
             _cur.ty == TokenType::LT_CHAR)
         {
             _bump();
             return true;
         }
+
+        // if (_cur.ty == TokenType::LT_CHAR)
+        // {
+        //     _bump();
+        //     return true;
+        // }
+
+        static Operand* MakeIntegerConst(long int val, Type *ty);
+        static Operand* MakeFloatConst(double val, Type *ty);
 
         ERROR("expected an operand but found \'{}\'", _cur, _cur.lexema);
     }

@@ -26,7 +26,7 @@ namespace ucb
 
         Procedure* parent() { return _parent; }
         const Procedure* parent() const { return _parent; }
-        std::string_view id() const { return _id; }
+        const std::string& id() const { return _id; }
         const Type* ty() const { return _ty; }
 
     private:

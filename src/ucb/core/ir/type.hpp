@@ -59,7 +59,9 @@ namespace ucb
         {
             IK_SIGNED,
             IK_UNSIGNED,
-            IK_FLOAT
+            IK_FLOAT,
+            IK_VOID,
+            IK_BOOL
         };
 
         IntegralTy(CompileUnit *parent, IntegralKind ikind, char size_bits):

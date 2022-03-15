@@ -5,6 +5,8 @@
 #include <memory>
 
 #include <ucb/core/ir/compile-unit.hpp>
+#include <ucb/core/ir/instruction.hpp>
+#include <ucb/core/ir/type.hpp>
 #include <ucb/frontend/lexer.hpp>
 
 namespace ucb::frontend
@@ -25,6 +27,7 @@ namespace ucb::frontend
     private:
         std::string _filename;
         std::shared_ptr<CompileUnit> _compile_unit;
+        std::shared_ptr<Procedure> _proc;
         Lexer _lex;
         Token _cur;
         bool _debug;
@@ -48,8 +51,8 @@ namespace ucb::frontend
         bool _parse_call();
         bool _parse_cmp();
 
-        bool _parse_ty();
-        bool _parse_opnd();
+        bool _parse_ty(Type *ty);
+        bool _parse_opnd(Operand *op);
 
         Token _bump();
     };

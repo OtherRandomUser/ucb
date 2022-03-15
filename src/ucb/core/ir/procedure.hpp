@@ -34,6 +34,10 @@ namespace ucb
     {
     };
 
+    class ProcRegs : public IList<VirtualRegister>
+    {
+    };
+
     class Procedure : public IList<BasicBlock>
     {
     public:
@@ -44,7 +48,8 @@ namespace ucb
         }
 
         ProcSignature& signature() { return *_signature; }
-        ProcFrame& frame() { return *_frame; }
+        ProcFrame& frame() { return _frame; }
+        ProcRegs& regs() { return _regs; }
 
         BasicBlock& entry()
         {
@@ -52,10 +57,13 @@ namespace ucb
             return *begin();
         }
 
+        Operand* operand_from_id(const std::string& id);
+
     private:
         CompileUnit *_parent;
         BasicBlock *_entry;
         std::unique_ptr<ProcSignature> _signature;
-        std::unique_ptr<ProcFrame> _frame;
+        ProcFrame _frame;
+        ProcRegs _regs;
     };
 }
