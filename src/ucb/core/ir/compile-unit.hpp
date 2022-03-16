@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <vector>
 
 #include <ucb/core/ir/procedure.hpp>
@@ -12,64 +13,64 @@ namespace ucb
     public:
         CompileUnit();
 
-        Procedure* add_procedure(signature, std::string identifier);
-        Procedure* get_procedure(std::string identifier);
+        // Procedure* add_procedure(signature, std::string identifier);
+        // Procedure* get_procedure(std::string identifier);
 
-        template<typename... ARGS>
-        IntegralTy *get_int_ty(ARGS&&... args)
+        TypeID get_ptr_ty(TypeID sub)
         {
-            IntegralTy ty(this, std::forward(args)...);
-            auto it = std::find(_integral_tys.begin(), _integral_tys.end(), ty);
+            CompositeType ty(
+                this,
+                CompositeType::CompositeTyKind::CTK_PTR,
+                64, // shouldnt be hard coded, i know
+                sub
+            );
 
-            if (it == _integral_tys.end())
+            auto it = std::find(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
-                _integral_tys.push_back(std::move(ty));
-                return &_integral_tys.back();
+                return p.second == ty;
+            });
+
+            if (it == _comp_tys.end())
+            {
+                auto res = static_cast<TypeID>(_next_ty_id++);
+                _comp_tys.emplace_back(res, ty);
+                return res;
             }
             else
             {
-                return &(*it);
+                return it->first;
             }
         };
 
-        template<typename... ARGS>
-        PtrTy *get_ptr_ty(ARGS&&... args)
+        TypeID get_arr_ty(TypeID sub, int size)
         {
-            PtrTy ty(this, std::forward(args)...);
-            auto it = std::find(_ptr_tys.begin(), _ptr_tys.end(), ty);
+            CompositeType ty(
+                this,
+                CompositeType::CompositeTyKind::CTK_ARR,
+                size,
+                sub
+            );
 
-            if (it == _ptr_tys.end())
+            auto it = std::find(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
-                _ptr_tys.push_back(std::move(ty));
-                return &_ptr_tys.back();
+                return p.second == ty;
+            });
+
+            if (it == _comp_tys.end())
+            {
+                auto res = static_cast<TypeID>(_next_ty_id++);
+                _comp_tys.emplace_back(res, ty);
+                return res;
             }
             else
             {
-                return &(*it);
-            }
-        };
-
-        template<typename... ARGS>
-        ArrayTy *get_array_ty(ARGS&&... args)
-        {
-            ArrayTy ty(this, std::forward(args)...);
-            auto it = std::find(_array_tys.begin(), _array_tys.end(), ty);
-
-            if (it == _array_tys.end())
-            {
-                _array_tys.push_back(std::move(ty));
-                return &_array_tys.back();
-            }
-            else
-            {
-                return &(*it);
+                return it->first;
             }
         };
 
     private:
-        std::vector<IntegralTy> _integral_tys;
-        std::vector<PtrTy> _ptr_tys;
-        std::vector<ArrayTy> _array_tys;
+        int _next_ty_id{COMP_TY_START};
+        std::vector<std::pair<TypeID, CompositeType>> _comp_tys;
         std::vector<std::shared_ptr<Procedure>> _procs;
     };
 }

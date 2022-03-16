@@ -51,7 +51,7 @@ namespace ucb::frontend
         bool _parse_call();
         bool _parse_cmp();
 
-        bool _parse_ty(Type *ty);
+        bool _parse_ty(TypeID ty);
         bool _parse_opnd(Operand *op);
 
         Token _bump();

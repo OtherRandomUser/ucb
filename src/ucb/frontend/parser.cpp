@@ -513,9 +513,9 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_ty(Type *ty)
+    bool Parser::_parse_ty(TypeID& ty)
     {
-        ty = nullptr;
+        ty = TypeID::T_ERROR;
 
         if (_cur.ty == TokenType::ID_OTHER && _cur.lexema == "array")
         {
@@ -525,7 +525,8 @@ namespace ucb::frontend
             auto of = _bump();
             CHECK_TK(of, of.ty == TokenType::ID_OTHER && of.lexema == "of", "of");
 
-            Type *sub = nullptr;
+            _bump();
+            auto sub = TypeID::T_ERROR;
             if (!_parse_ty(sub))
             {
                 return false;
@@ -539,7 +540,7 @@ namespace ucb::frontend
         {
             _bump();
 
-            Type *sub;
+            auto sub = TypeID::T_ERROR;
             if (!_parse_ty(sub))
             {
                 return false;
@@ -558,55 +559,53 @@ namespace ucb::frontend
             return false;
 
         case TY_VOID:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_VOID, 0);
-            break;
+            ty = TypeID::T_VOID;
+            return true;
 
         case TY_BOOL:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_BOOL, 1);
-            break;
+            ty = TypeID::T_BOOL;
+            return true;
 
         case TY_I8:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 8);
-            break;
+            ty = TypeID::T_I8;
+            return true;
 
         case TY_I16:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 16);
-            break;
+            ty = TypeID::T_I16;
+            return true;
 
         case TY_I32:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 32);
-            break;
+            ty = TypeID::T_I32;
+            return true;
 
         case TY_I64:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_SIGNED, 64);
-            break;
+            ty = TypeID::T_I64;
+            return true;
 
         case TY_U8:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 8);
-            break;
+            ty = TypeID::T_U8;
+            return true;
 
         case TY_U16:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 16);
-            break;
+            ty = TypeID::T_U16;
+            return true;
 
         case TY_U32:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 32);
-            break;
+            ty = TypeID::T_U32;
+            return true;
 
         case TY_U64:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_UNSIGNED, 64);
-            break;
+            ty = TypeID::T_U64;
+            return true;
 
         case TY_F32:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_FLOAT, 32);
-            break;
+            ty = TypeID::T_F32;
+            return true;
 
         case TY_F64:
-            ty = _compile_unit->get_int_ty(IntegralKind::IK_FLOAT, 64);
-            break;
+            ty = TypeID::T_F64;
+            return true;
         }
-
-        return true;
     }
 
     bool Parser::_parse_opnd(Operand *op, Type *ty)
