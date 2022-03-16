@@ -12,7 +12,7 @@ namespace ucb
 
         if (reg != _regs.end())
         {
-            return Operand::MakeVirtualReg(reg, false);
+            return new Operand(this, reg.data(), false);
         }
 
         reg = std::find_if(_frame.begin(), _frame.end(), [&](auto& r) {
@@ -21,16 +21,16 @@ namespace ucb
 
         if (reg != _frame.end())
         {
-            return Operand::MakeVirtualReg(reg, false);
+            return new Operand(this, reg.data(), false);
         }
 
         auto bblock = std::find_if(begin(), end(), [&](auto& b) {
             return b.id() == id;
         });
 
-        if (b != end())
+        if (bblock != end())
         {
-            return Operand::MakeBasicBlock(bblock);
+            return new Operand(this, bblock.data());
         }
 
         return nullptr;

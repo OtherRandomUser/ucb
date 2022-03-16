@@ -608,15 +608,17 @@ namespace ucb::frontend
         }
     }
 
-    bool Parser::_parse_opnd(Operand *op, Type *ty)
+    bool Parser::_parse_opnd(Operand **op, TypeID ty)
     {
+        *op = nullptr;
+
         if (_cur.ty == TokenType::ID_LOCAL)
         {
-            op = _proc->operand_from_id(_cur.lexema);
+            *op = _proc->operand_from_id(_cur.lexema);
 
-            if (op == nullptr)
+            if (*op == nullptr)
             {
-                return false;
+                ERROR("local identifier \"{}\" not found", _cur, _cur.lexema);
             }
 
             _bump();
@@ -625,26 +627,38 @@ namespace ucb::frontend
 
         if (_cur.ty == TokenType::LT_INT)
         {
+            if (ty_is_signed_int(ty))
+            {
+                auto val = std::stol(_cur.lexema);
+                *op = new Operand(_proc, val, ty);
+            }
+            else if (ty_is_unsigned_int(ty))
+            {
+                auto val = std::stoul(_cur.lexema);
+                *op = new Operand(_proc, val, ty);
+            }
+            else
+            {
+                ERROR("expected an integer type", _cur);
+            }
+
             _bump();
             return true;
         }
 
-        if (_cur.ty == TokenType::LT_INT
-            _cur.ty == TokenType::LT_FLOAT
-            _cur.ty == TokenType::LT_CHAR)
+        if (_cur.ty == TokenType::LT_FLOAT)
         {
+            if (!ty_is_float(ty))
+            {
+                ERROR("expected a float type", _cur);
+            }
+
+            auto val = std::stod(_cur.lexema);
+            *op = new Operand(_proc, val, ty);
+
             _bump();
             return true;
         }
-
-        // if (_cur.ty == TokenType::LT_CHAR)
-        // {
-        //     _bump();
-        //     return true;
-        // }
-
-        static Operand* MakeIntegerConst(long int val, Type *ty);
-        static Operand* MakeFloatConst(double val, Type *ty);
 
         ERROR("expected an operand but found \'{}\'", _cur, _cur.lexema);
     }

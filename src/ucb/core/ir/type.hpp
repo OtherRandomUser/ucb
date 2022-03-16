@@ -70,4 +70,26 @@ namespace ucb
         int _size;
         TypeID _sub;
     };
+
+    constexpr bool ty_is_signed_int(TypeID ty)
+    {
+        return ty == TypeID::T_I8
+            || ty == TypeID::T_I16
+            || ty == TypeID::T_I32
+            || ty == TypeID::T_I64;
+    }
+
+    constexpr bool ty_is_unsigned_int(TypeID ty)
+    {
+        return ty == TypeID::T_U8
+            || ty == TypeID::T_U16
+            || ty == TypeID::T_U32
+            || ty == TypeID::T_U64;
+    }
+
+    constexpr bool ty_is_float(TypeID ty)
+    {
+        return ty == TypeID::T_F32
+            || ty == TypeID::T_F64;
+    }
 }

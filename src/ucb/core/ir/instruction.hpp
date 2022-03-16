@@ -10,38 +10,32 @@
 
 namespace ucb
 {
-    class Operand;
-    class OperandIterator;
-    class Instruction;
-    class InstructionIterator;
     class BasicBlock;
+    class Procedure;
 
-    enum OperandTy : int
+    enum OperandKind : int
     {
-        OT_VIRTUAL_REG,
+        OK_POISON = 0,
+        OK_VIRTUAL_REG,
         // OT_GLOBAL_VARIABLE,
         // OT_STRING_LITERAL,
-        OT_INTEGER_CONST,
-        OT_FLOAT_CONST,
-        OT_BASIC_BLOCK
+        OK_INTEGER_CONST,
+        OK_UNSIGNED_CONST,
+        OK_FLOAT_CONST,
+        OK_BASIC_BLOCK
     };
 
     class Operand : public IListNode<Operand>
     {
     public:
-        friend OperandIterator;
-        friend Instruction;
+        Operand(Procedure *parent, VirtualRegister *reg, bool is_def);
+        Operand(Procedure *parent, BasicBlock *bblock);
+        Operand(Procedure *parent, long int val, TypeID ty);
+        Operand(Procedure *parent, unsigned long val, TypeID ty);
+        Operand(Procedure *parent, double val, TypeID ty);
 
-        static Operand* MakeVirtualReg(VirtualRegister *reg, bool is_def);
-        static Operand* MakeBasicBlock(BasicBlock *bblock);
-        static Operand* MakeIntegerConst(long int val, Type *ty);
-        static Operand* MakeFloatConst(double val, Type *ty);
-
-        bool is_value() const { return _ty == OT_VIRTUAL_REG || _ty == OT_INTEGER_CONST || _ty == OT_FLOAT_CONST; }
-        bool is_const() const { return _ty == OT_INTEGER_CONST || _ty == OT_FLOAT_CONST; }
-
-        OperandTy ty() const { return _ty; }
-        const Type* vt() const { return _vt; }
+        OperandKind kind() const { return _kind; }
+        const TypeID ty() const { return _ty; }
 
         VirtualRegister* get_virtual_reg();
         const VirtualRegister* get_virtual_reg() const;
@@ -50,68 +44,20 @@ namespace ucb
         long int get_integer_val() const;
         double get_float_val() const;
 
-
     private:
-        Operand(OperandTy ty, const Type *vt, bool is_def):
-            _ty{ty},
-            _vt{vt},
-            _is_def{is_def},
-            _next{nullptr}
-        {
-        }
+        Operand(Procedure *parent);
 
-        OperandTy _ty;
-        const Type *_vt;
+        Procedure *_parent;
+        TypeID _ty;
+        OperandKind _kind;
+
         bool _is_def;
 
-        union
-        {
-            VirtualRegister *_virtual_reg;
-            BasicBlock *_bblock;
-            long int _integer_val;
-            double _float_val;
-        };
-    };
-
-    class OperandIterator
-    {
-        Operand *_cur;
-
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = Operand;
-        using difference_type = size_t;
-        using pointer = Operand*;
-        using reference = Operand&;
-
-        OperandIterator():
-            _cur{nullptr}
-        {
-        }
-
-        OperandIterator(Operand *cur):
-            _cur{cur}
-        {
-        }
-
-        reference operator* () { return *_cur; }
-
-        bool operator != (const OperandIterator& other)
-        {
-            return _cur != other._cur;
-        }
-
-        OperandIterator& operator++ ()
-        {
-            _cur = _cur->_next;
-            return *this;
-        }
-
-        OperandIterator operator++ (int)
-        {
-            auto cur = _cur;
-            _cur = _cur->_next;
-            return OperandIterator(cur);
-        }
+        VirtualRegister *_reg;
+        BasicBlock *_bblock;
+        long int _integer_val;
+        unsigned long _unsigned_val;
+        double _float_val;
     };
 
     enum InstrOpcode

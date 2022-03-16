@@ -203,9 +203,10 @@ namespace ucb
         {
         }
 
+        T* data() { return _cur; }
         T& operator* () { return *_cur; }
 
-        bool operator != (const T& other)
+        bool operator != (const IListIterator<T>& other)
         {
             return _cur != other._cur;
         }
