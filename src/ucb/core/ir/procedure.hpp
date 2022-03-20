@@ -46,15 +46,18 @@ namespace ucb
         std::vector<VirtualRegister>& frame() { return _frame; }
         std::vector<VirtualRegister>& regs() { return _regs; }
 
-        BasicBlock& add_bblock(std::string id);
-
         BasicBlock& entry()
         {
             assert(_bblocks.size());
             return *_bblocks.begin();
         }
 
+        BasicBlock* find_bblock(const std::string& id);
+        BasicBlock* add_bblock(std::string id);
         Operand* operand_from_bblock(const std::string& id);
+        VirtualRegister* find_vreg(const std::string& id);
+        VirtualRegister& add_frame_slot(std::string id, TypeID ty);
+        VirtualRegister& add_vreg(std::string id, TypeID ty);
         Operand* operand_from_vreg(const std::string& id, bool is_def);
 
     private:
