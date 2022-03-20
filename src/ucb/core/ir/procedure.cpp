@@ -24,7 +24,6 @@ namespace ucb
 
         if (prs != nullptr)
         {
-            std::cerr << "basic block \"" << id << "\" already exists\n";
             return nullptr;
         }
         else

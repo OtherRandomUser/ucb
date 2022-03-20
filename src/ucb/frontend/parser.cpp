@@ -160,7 +160,7 @@ namespace ucb::frontend
             return _parse_label();
 
         case TokenType::ID_LOCAL:
-        case TokenType::ID_GLOBAL:
+        // case TokenType::ID_GLOBAL: no globals
             return _parse_assign_statement();
 
         case TokenType::OP_STORE:
@@ -191,17 +191,19 @@ namespace ucb::frontend
 
         _bblock = _proc->add_bblock(id.lexema);
 
+        if (_bblock == nullptr)
+        {
+            ERROR("basic block \"{}\" already exists\n", id.lexema);
+        }
+
         _bump();
         return true;
     }
 
     bool Parser::_parse_assign_statement()
     {
-        Operand *res = nullptr;
-        if (!_parse_opnd(res, TypeID::T_ERROR, true))
-        {
-            return false;
-        }
+        auto def_id = _cur;
+        CHECK_TK(def_id, def_id == TokenType::ID_LOCAL, "local identifier");
 
         auto as = _bump();
         CHECK_TK(as, as.ty == '=', "'='");
@@ -210,31 +212,31 @@ namespace ucb::frontend
 
         if (tk_is_bin_op(op))
         {
-            return _parse_bin_op(res);
+            return _parse_bin_op(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_NOT || op.ty == TokenType::OP_CP)
         {
-            return _parse_unnary_op(res);
+            return _parse_unnary_op(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_CAST)
         {
-            return _parse_cast(res);
+            return _parse_cast(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_ALLOC)
         {
-            return _parse_alloc(res);
+            return _parse_alloc(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_LOAD)
         {
-            return _parse_load();
+            return _parse_load(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_CALL)
         {
-            return _parse_call();
+            return _parse_call(def_id.lexema);
         }
         else if (op.ty == TokenType::OP_CMP)
         {
-            return _parse_cmp();
+            return _parse_cmp(def_id.lexema);
         }
 
         ERROR("expected an asignment statement but found '{}'", op, op.lexema);
@@ -358,10 +360,8 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_bin_op(Operand *def)
+    bool Parser::_parse_bin_op(std::string def_id)
     {
-        assert(def);
-
         auto optk = _cur;
         CHECK_TK(op, tk_is_bin_op(op), "a binary operation");
 
@@ -373,6 +373,15 @@ namespace ucb::frontend
         {
             return false;
         }
+        
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
 
         Operand *lhs = nullptr;
         if (!_parse_opnd(&lhs, ty, false))
@@ -443,7 +452,7 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_unnary_op(Operand *def)
+    bool Parser::_parse_unnary_op(std::string def_id)
     {
         auto op = _cur;
         CHECK_TK(op,op.ty == TokenType::OP_NOT || op.ty == TokenType::OP_CP, "an unnary op");
@@ -455,6 +464,15 @@ namespace ucb::frontend
         {
             return false;
         }
+
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
 
         Operand *opnd = nullptr;
         if (!_parse_opnd(&opnd, ty, false))
@@ -473,7 +491,7 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_cast(Operand *def)
+    bool Parser::_parse_cast(std::string def_id)
     {
         CHECK_TK(_cur, _cur.ty ==TokenType::OP_CAST, "cast");
 
@@ -484,6 +502,15 @@ namespace ucb::frontend
         {
             return false;
         }
+
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
 
         Operand * opnd = nullptr;
         if (!_parse_opnd(&opnd, opnd_ty, false))
@@ -504,7 +531,7 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_alloc(Operand *def)
+    bool Parser::_parse_alloc(std::string def_id)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_ALLOC, "alloc");
 
@@ -516,13 +543,12 @@ namespace ucb::frontend
             return false;
         }
 
-        auto& inst = _bblock->append_instr(InstrOpcode::OP_ALLOC, ty);
-        inst.append(def);
+        _bblock->add_frame_slot(def_id, ty); // TODO should be ptr of ty
 
         return true;
     }
 
-    bool Parser::_parse_load(Operand *def)
+    bool Parser::_parse_load(std::string def_id)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_LOAD, "load");
 
@@ -533,6 +559,15 @@ namespace ucb::frontend
         {
             return false;
         }
+
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
 
         TypeID ptr_ty;
         if (!_parse_ty(ptr_ty))
@@ -553,7 +588,7 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_call(Operand *def)
+    bool Parser::_parse_call(std::string def_id)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_CALL, "call");
 
@@ -565,10 +600,20 @@ namespace ucb::frontend
             return false;
         }
 
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
+
         auto id = _bump();
         CHECK_TK(id, id.ty == TokenType::ID_GLOBAL, "a global identifier");
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_CALL, ty, id.lexema);
+        inst->append(def);
 
         auto lp = _bump();
         CHECK_TK(lp, lp.ty == '(', "'('");
@@ -597,7 +642,7 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_cmp()
+    bool Parser::_parse_cmp(std::string def_id)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_CMP, "cmp");
 
@@ -612,6 +657,15 @@ namespace ucb::frontend
         {
             return false;
         }
+
+        auto reg = _bblock->find_vreg(def_id);
+
+        if (reg == nullptr)
+        {
+            _bblock->add_vreg(def_id, ty);
+        }
+
+        auto def = _bblock->operand_from_vreg(def_id, true);
 
         Operand *lhs = nullptr;
         if (!_parse_opnd(&lhs, TypeID::T_ERROR, false))

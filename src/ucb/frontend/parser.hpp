@@ -46,13 +46,13 @@ namespace ucb::frontend
         bool _parse_br();
         bool _parse_brc();
         bool _parse_ret();
-        bool _parse_bin_op(Operand *def);
-        bool _parse_unnary_op(Operand *def);
-        bool _parse_cast(Operand *def);
-        bool _parse_alloc(Operand *def);
-        bool _parse_load(Operand *def);
-        bool _parse_call(Operand *def);
-        bool _parse_cmp();
+        bool _parse_bin_op(std::string def_id);
+        bool _parse_unnary_op(std::string def_id);
+        bool _parse_cast(std::string def_id);
+        bool _parse_alloc(std::string def_id);
+        bool _parse_load(std::string def_id);
+        bool _parse_call(std::string def_id);
+        bool _parse_cmp(std::string def_id);
 
         bool _parse_ty(TypeID ty);
         bool _parse_opnd(Operand **op, TypeID ty, bool is_def);
