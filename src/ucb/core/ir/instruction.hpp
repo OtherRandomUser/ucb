@@ -90,9 +90,16 @@ namespace ucb
         public DIListNode<Instruction>
     {
     public:
-        Instruction(BasicBlock *parent, InstrOpcode op):
+        Instruction(BasicBlock *parent, InstrOpcode op, TypeID ty):
             _parent(parent),
-            _op(op)
+            _op{op},
+            _ty{ty}
+        {
+        }
+
+        Instruction(BasicBlock *parent, InstrOpcode op, TypeID ty, std::string id):
+            Instruction(parent, op, ty),
+            _id(std::move(id))
         {
         }
 
@@ -102,12 +109,13 @@ namespace ucb
         BasicBlock* parent() { return _parent; }
         const BasicBlock* parent() const { return _parent; }
         InstrOpcode op() const { return _op; }
-        Type* ty() { return _ty; }
-        const Type* ty() const { return _ty; }
+        TypeID ty() const { return _ty; }
+        const std::string& id() const { return _id; }
 
     private:
         BasicBlock *_parent;
         InstrOpcode _op;
-        Type * _ty;
+        TypeID _ty;
+        std::string _id; // TODO use an operand
     };
 }

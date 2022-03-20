@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <ucb/core/ir/basic-block.hpp>
 #include <ucb/core/ir/ilist.hpp>
@@ -8,62 +9,64 @@
 
 namespace ucb
 {
-    class ProcSignature : public IList<VirtualRegister>
+    class ProcSignature
     {
     public:
-        ProcSignature(Type *ty):
+        ProcSignature(TypeID ty):
             _ty{ty}
         {
         }
 
-        ~ProcSignature()
-        {
-            if (_ty)
-            {
-                delete _ty;
-            }
-        }
-
-        const Type* ret() { return _ty; };
+        TypeID ret() const { return _ty; };
+        std::vector<std::pair<std::string, TypeID>>& args() { return _args; }
+        const std::vector<std::pair<std::string, TypeID>>& args() const { return _args; }
 
     private:
-        Type *_ty;
-    };
-
-    class ProcFrame : public IList<VirtualRegister>
-    {
-    };
-
-    class ProcRegs : public IList<VirtualRegister>
-    {
+        TypeID _ty;
+        std::vector<std::pair<std::string, TypeID>> _args;
     };
 
     class Procedure : public IList<BasicBlock>
     {
     public:
-        Procedure(CompileUnit *parent, std::unique_ptr<ProcSignature> signature):
+        Procedure(CompileUnit *parent, std::string id, ProcSignature signature):
             _parent{parent},
+            _id(std::move(id)),
             _signature(std::move(signature))
         {
+            for (auto& arg: _signature.args())
+            {
+                _params.emplace_back(this, arg.first, arg.second);
+            }
         }
 
-        ProcSignature& signature() { return *_signature; }
-        ProcFrame& frame() { return _frame; }
-        ProcRegs& regs() { return _regs; }
+        const std::string& id() const { return _id; }
+        const ProcSignature& signature() { return _signature; }
+        std::vector<VirtualRegister>& params() { return _params; }
+        std::vector<VirtualRegister>& frame() { return _frame; }
+        std::vector<VirtualRegister>& regs() { return _regs; }
+
+        BasicBlock& add_bblock(std::string id);
 
         BasicBlock& entry()
         {
-            assert(size());
-            return *begin();
+            assert(_bblocks.size());
+            return *_bblocks.begin();
         }
 
-        Operand* operand_from_id(const std::string& id);
+        Operand* operand_from_bblock(const std::string& id);
+        Operand* operand_from_vreg(const std::string& id, bool is_def);
 
     private:
         CompileUnit *_parent;
-        BasicBlock *_entry;
-        std::unique_ptr<ProcSignature> _signature;
-        ProcFrame _frame;
-        ProcRegs _regs;
+
+        ProcSignature _signature;
+        std::string _id;
+
+        std::vector<VirtualRegister> _params;
+        std::vector<VirtualRegister> _frame;
+        std::vector<VirtualRegister> _regs;
+
+        std::vector<BasicBlock> _bblocks;
     };
 }

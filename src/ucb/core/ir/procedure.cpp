@@ -4,33 +4,55 @@
 
 namespace ucb
 {
-    Operand* Procedure::operand_from_id(const std::string& id)
+    BasicBlock& Procedure::add_bblock(std::string id)
     {
-        auto reg = std::find_if(_regs.begin(), _regs.end(), [&](auto& r) {
-            return r.id() == id;
-        });
-
-        if (reg != _regs.end())
-        {
-            return new Operand(this, reg.data(), false);
-        }
-
-        reg = std::find_if(_frame.begin(), _frame.end(), [&](auto& r) {
-            return r.id() == id;
-        });
-
-        if (reg != _frame.end())
-        {
-            return new Operand(this, reg.data(), false);
-        }
-
-        auto bblock = std::find_if(begin(), end(), [&](auto& b) {
+        auto it = std::find_if(_bblocks.begin(), _bblocks.end(), [&](auto& b) {
             return b.id() == id;
         });
 
-        if (bblock != end())
+        if (it != _bblocks.end())
         {
-            return new Operand(this, bblock.data());
+            return *it;
+        }
+        else
+        {
+            _bblocks.emplace_back(this, std::move(id));
+            return _bblocks.back();
+        }
+    }
+
+    Operand* Procedure::operand_from_bblock(std::string id)
+    {
+        return new Operand(this, &add_bblock(std::move(id));
+    }
+
+    Operand* Procedure::operand_from_vreg(const std::string& id, bool is_def)
+    {
+        auto it = std::find_if(_regs.begin(), _regs.end(), [&](auto& r) {
+            return r.id() == id;
+        });
+
+        if (it != _regs.end())
+        {
+            return new Operand(this, &*it, is_def);
+        }
+
+        it = std::find_if(_frame.begin(), _frame.end(), [&](auto& r) {
+            return r.id() == id;
+        });
+
+        if (it != _frame.end())
+        {
+            return new Operand(this, &*it, false);
+        }
+
+        it = std::find_if(_params.begin(), _params.end(), [&](auto& r) {
+            return r.id() == id;
+        });
+
+        if (it != _params.end())
+        {
+            return new Operand(this, &*it, false);
         }
 
         return nullptr;

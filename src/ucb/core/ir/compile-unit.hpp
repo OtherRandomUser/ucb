@@ -13,8 +13,8 @@ namespace ucb
     public:
         CompileUnit();
 
-        // Procedure* add_procedure(signature, std::string identifier);
-        // Procedure* get_procedure(std::string identifier);
+        std::shared_ptr<Procedure> add_procedure(ProcSignature sig, std::string id);
+        std::shared_ptr<Procedure> get_procedure(const std::string& id);
 
         TypeID get_ptr_ty(TypeID sub)
         {

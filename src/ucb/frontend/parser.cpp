@@ -46,7 +46,8 @@ namespace ucb::frontend
 
     bool Parser::_parse_def()
     {
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
@@ -58,11 +59,11 @@ namespace ucb::frontend
 
         if (next.ty == '(')
         {
-            return _parse_func();
+            return _parse_func(ty, id.lexema);
         }
         else if (next.ty == '=')
         {
-            return _parse_global();
+            return _parse_global(); // TODO
         }
         else
         {
@@ -86,16 +87,20 @@ namespace ucb::frontend
         return true;
     }
 
-    bool Parser::_parse_func()
+    bool Parser::_parse_func(TypeID ret_ty, std::string id)
     {
         auto lp = _cur;
         CHECK_TK(lp, lp.ty == '(', "'('");
 
         _bump();
-        if (!_parse_param_defs())
+        ProcSignature sig(ret_ty);
+        if (!_parse_param_defs(ret_ty, sig))
         {
             return false;
         }
+
+        _proc = _compile_unit->add_procedure(sig, id);
+        _bblock = _proc->add_bblock("entry");
 
         auto lb = _cur;
         CHECK_TK(lb, lb.ty == '{', "'{'");
@@ -112,21 +117,26 @@ namespace ucb::frontend
             }
         }
 
+        _proc = nullptr;
+        _bblock = nullptr;
         _bump();
         return true;
     }
 
-    bool Parser::_parse_param_defs()
+    bool Parser::_parse_param_defs(TypeID ret_ty, ProcSignature& sig)
     {
         while (true)
         {
-            if (!_parse_ty())
+            TypeID ty;
+            if (!_parse_ty(ty))
             {
                 return false;
             }
 
             auto id = _cur;
             CHECK_TK(id, id.ty == TokenType::ID_LOCAL, "local identifier");
+
+            sig.args().emplace_back(id.lexema, ty);
 
             auto c = _bump();
 
@@ -139,9 +149,6 @@ namespace ucb::frontend
         }
 
         _bump();
-
-        // TODO
-
         return true;
     }
 
@@ -182,17 +189,19 @@ namespace ucb::frontend
         auto p = _bump();
         CHECK_TK(p, p.ty == ':', "':'");
 
+        _bblock = _proc->add_bblock(id.lexema);
+
         _bump();
-
-        // TODO create basic block
-
         return true;
     }
 
     bool Parser::_parse_assign_statement()
     {
-        auto vr = _cur;
-        CHECK_TK(vr, vr.ty == TokenType::ID_GLOBAL || vr.ty == TokenType::ID_LOCAL, "identifier");
+        Operand *res = nullptr;
+        if (!_parse_opnd(res, TypeID::T_ERROR, true))
+        {
+            return false;
+        }
 
         auto as = _bump();
         CHECK_TK(as, as.ty == '=', "'='");
@@ -201,19 +210,19 @@ namespace ucb::frontend
 
         if (tk_is_bin_op(op))
         {
-            return _parse_bin_op();
+            return _parse_bin_op(res);
         }
         else if (op.ty == TokenType::OP_NOT || op.ty == TokenType::OP_CP)
         {
-            return _parse_unnary_op();
+            return _parse_unnary_op(res);
         }
         else if (op.ty == TokenType::OP_CAST)
         {
-            return _parse_cast();
+            return _parse_cast(res);
         }
         else if (op.ty == TokenType::OP_ALLOC)
         {
-            return _parse_alloc();
+            return _parse_alloc(res);
         }
         else if (op.ty == TokenType::OP_LOAD)
         {
@@ -236,30 +245,35 @@ namespace ucb::frontend
     {
         auto op = _cur;
         CHECK_TK(op, op.ty == TokenType::OP_STORE, "'store'");
-
         _bump();
-        if (!_parse_ty())
+
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *val
+        if (!_parse_opnd(ty, &val, false))
         {
             return false;
         }
 
-        _bump();
-        if (!_parse_ty())
+        TypeID ty_ref;
+        if (!_parse_ty(ty_ref))
         {
             return false;
         }
 
-        auto vrb = _cur;
-        CHECK_TK(vrb, vrb.ty == TokenType::ID_LOCAL || vrb.ty == TokenType::ID_GLOBAL, "identifier");
+        Operand *ref
+        if (!_parse_opnd(ty_ref, &ref, false))
+        {
+            return false;
+        }
 
-        _bump();
-
-        // TODO
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_STORE, ty);
+        inst.append(val);
+        inst.append(ref);
 
         return true;
     }
@@ -267,13 +281,17 @@ namespace ucb::frontend
     bool Parser::_parse_br()
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_BR, "br");
-
-        auto target = _bump();
-        CHECK_TK(target, target.ty == TokenType::ID_LOCAL, "a local identifier");
-
         _bump();
 
-        // TODO
+        Operand *tgt;
+        if (!_parse_opnd(TypeID::T_STATIC_ADDRESS, &tgt))
+        {
+            return false;
+        }
+
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_BR, ty);
+        inst.append(cnd);
+        inst.append(lt);
 
         return true;
     }
@@ -285,20 +303,30 @@ namespace ucb::frontend
         _bump();
         CHECK_TK(_cur, _cur.ty == TokenType::TY_BOOL, "bool");
 
-        if (!_parse_opnd())
+        _bump();
+
+        Operand *cnd
+        if (!_parse_opnd(TypeID::T_BOOL, &cnd, false))
         {
             return false;
         }
 
-        auto btrue = _bump();
-        CHECK_TK(btrue, btrue.ty == TokenType::ID_LOCAL, "a local identifier");
+        Operand *lt;
+        if (!_parse_opnd(TypeID::T_STATIC_ADDRESS, &lt, false))
+        {
+            return false;
+        }
 
-        auto bfalse = _bump();
-        CHECK_TK(bfalse, bfalse.ty == TokenType::ID_LOCAL, "a local identifier");
+        Operand *lf;
+        if (!_parse_opnd(TypeID::T_STATIC_ADDRESS, &lf, false))
+        {
+            return false;
+        }
 
-        _bump();
-
-        // TODO
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_BRC, ty);
+        inst.append(cnd);
+        inst.append(lt);
+        inst.append(lf);
 
         return true;
     }
@@ -308,149 +336,231 @@ namespace ucb::frontend
         CHECK_TK(_cur, _cur.ty == TokenType::OP_RET, "ret");
 
         _bump();
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        // TODO dont parse a vr if ty is void
-        if (!_parse_opnd())
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_RET, ty);
+
+        if (ty != TypeID::T_VOID)
         {
-            return false;
+            Operand *opnd;
+            if (!_parse_opnd(ty, &opnd, false))
+            {
+                return false;
+            }
+
+            inst.append(opnd);
         }
-
-        _bump();
-
-        // TODO
 
         return true;
     }
 
-    bool Parser::_parse_bin_op()
+    bool Parser::_parse_bin_op(Operand *def)
     {
-        auto op = _cur;
+        assert(def);
+
+        auto optk = _cur;
         CHECK_TK(op, tk_is_bin_op(op), "a binary operation");
 
         // accept op
         _bump();
 
-        if (!_parse_ty())
+        TypeID ty
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *lhs = nullptr;
+        if (!_parse_opnd(&lhs, ty, false))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *rhs = nullptr;
+        if (!_parse_opnd(&rhs, ty, false))
         {
             return false;
         }
 
-        // TODO
+        auto op = InstrOpcode::OP_ADD;
+
+        switch (optk)
+        {
+            case TokenType::OP_ADD:
+                op = InstrOpcode::OP_ADD;
+                break;
+
+            case TokenType::OP_SUB:
+                op = InstrOpcode::OP_SUB;
+                break;
+
+            case TokenType::OP_MUL:
+                op = InstrOpcode::OP_MUL;
+                break;
+
+            case TokenType::OP_DIV:
+                op = InstrOpcode::OP_DIV;
+                break;
+
+            case TokenType::OP_REM:
+                op = InstrOpcode::OP_REM;
+                break;
+
+            case TokenType::OP_AND:
+                op = InstrOpcode::OP_AND;
+                break;
+
+            case TokenType::OP_OR:
+                op = InstrOpcode::OP_OR;
+                break;
+
+            case TokenType::OP_XOR:
+                op = InstrOpcode::OP_XOR;
+                break;
+
+            case TokenType::OP_SHL:
+                op = InstrOpcode::OP_SHL;
+                break;
+
+            case TokenType::OP_SHR:
+                op = InstrOpcode::OP_SHR;
+                break;
+
+            default:
+                std::cerr << "Unknown op\n";
+                abort();
+        }
+
+        auto& inst = _bblock->append_instr(op, ty);
+        inst.append(def);
+        inst.append(lhs);
+        inst.append(rhs);
 
         return true;
     }
 
-    bool Parser::_parse_unnary_op()
+    bool Parser::_parse_unnary_op(Operand *def)
     {
         auto op = _cur;
         CHECK_TK(op,op.ty == TokenType::OP_NOT || op.ty == TokenType::OP_CP, "an unnary op");
 
         _bump();
 
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *opnd = nullptr;
+        if (!_parse_opnd(&opnd, ty, false))
         {
             return false;
         }
 
-        // TODO
+        auto opc = op.ty == TokenType::OP_NOT
+            ? InstrOpcode::OP_NOT
+            : InstrOpcode::OP_CP;
+
+        auto &inst = _bblock->append_instr(opc, ty);
+        inst.append(def);
+        inst.append(opnd);
 
         return true;
     }
 
-    bool Parser::_parse_cast()
+    bool Parser::_parse_cast(Operand *def)
     {
         CHECK_TK(_cur, _cur.ty ==TokenType::OP_CAST, "cast");
 
         _bump();
 
-        if (!_parse_ty())
+        TypeID opnd_ty;
+        if (!_parse_ty(opnd_ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand * opnd = nullptr;
+        if (!_parse_opnd(&opnd, opnd_ty, false))
         {
             return false;
         }
 
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        // TODO
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_CAST, ty);
+        inst.append(def);
+        inst.append(opnd);
 
         return true;
     }
 
-    bool Parser::_parse_alloc()
+    bool Parser::_parse_alloc(Operand *def)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_ALLOC, "alloc");
 
         _bump();
 
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        // TODO
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_ALLOC, ty);
+        inst.append(def);
 
         return true;
     }
 
-    bool Parser::_parse_load()
+    bool Parser::_parse_load(Operand *def)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_LOAD, "load");
 
         _bump();
 
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        if (!_parse_ty())
+        TypeID ptr_ty;
+        if (!_parse_ty(ptr_ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *opnd;
+        if (!_parse_opnd(&opnd, ptr_ty, false))
         {
             return false;
         }
 
-        // TODO
+        auto&inst = _bblock->append_instr(InstrOpcode::OP_LOAD, ty);
+        inst.append(def);
+        inst.append(opnd);
 
         return true;
     }
 
-    bool Parser::_parse_call()
+    bool Parser::_parse_call(Operand *def)
     {
         CHECK_TK(_cur, _cur.ty == TokenType::OP_CALL, "call");
 
         _bump();
 
-        if (!_parse_ty())
+        TypeID ty;
+        if (!_parse_ty(ty))
         {
             return false;
         }
@@ -458,15 +568,21 @@ namespace ucb::frontend
         auto id = _bump();
         CHECK_TK(id, id.ty == TokenType::ID_GLOBAL, "a global identifier");
 
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_CALL, ty, id.lexema);
+
         auto lp = _bump();
         CHECK_TK(lp, lp.ty == '(', "'('");
 
         while (true)
         {
-            if (!_parse_opnd())
+            auto opnd_ty = TypeID::T_ERROR;
+            Operand *opnd = nullptr;
+            if (!_parse_opnd(&opnd, opnd_ty, false))
             {
                 return false;
             }
+
+            inst->append(opnd);
 
             auto c = _cur;
 
@@ -477,8 +593,6 @@ namespace ucb::frontend
 
             CHECK_TK(c, c.ty == ',', "')' or ','");
         }
-
-        // TODO
 
         return true;
     }
@@ -493,22 +607,29 @@ namespace ucb::frontend
 
         _bump();
 
-        if (!_parse_ty())
+        auto ty = TypeID::T_ERROR;
+        if (!_parse_ty(ty))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *lhs = nullptr;
+        if (!_parse_opnd(&lhs, TypeID::T_ERROR, false))
         {
             return false;
         }
 
-        if (!_parse_opnd())
+        Operand *rhs = nullptr;
+        if (!_parse_opnd(rhs, TypeID::T_ERROR, false))
         {
             return false;
         }
 
-        // TODO
+        // TODO the mode should be separated, but i cant be bothered
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_CMP, ty, mode.lexema);
+        inst.append(def);
+        inst.append(lhs);
+        inst.append(rhs);
 
         return true;
     }
@@ -608,17 +729,24 @@ namespace ucb::frontend
         }
     }
 
-    bool Parser::_parse_opnd(Operand **op, TypeID ty)
+    bool Parser::_parse_opnd(Operand **op, TypeID ty, bool is_def)
     {
         *op = nullptr;
 
         if (_cur.ty == TokenType::ID_LOCAL)
         {
-            *op = _proc->operand_from_id(_cur.lexema);
-
-            if (*op == nullptr)
+            if (ty == TypeID::T_STATIC_ADDRESS)
             {
-                ERROR("local identifier \"{}\" not found", _cur, _cur.lexema);
+                *op = _proc->operand_from_bblock(_cur.lexema);
+            }
+            else
+            {
+                *op = _proc->operand_from_vreg(_cur.lexema, is_def);
+
+                if (*op == nullptr)
+                {
+                    ERROR("local identifier \"{}\" not found", _cur, _cur.lexema);
+                }
             }
 
             _bump();
