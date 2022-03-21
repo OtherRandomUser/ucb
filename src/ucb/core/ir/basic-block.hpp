@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include <ucb/core/ir/dilist.hpp>
 #include <ucb/core/ir/instruction.hpp>
 #include <ucb/core/ir/procedure.hpp>
@@ -23,6 +25,12 @@ namespace ucb
             auto instr = new Instruction(this, op, ty);
             append(instr);
             return *instr;
+        }
+
+        void dump(std::ostream& out) const;
+        void dump_ty(std::ostream& out, TypeID ty) const
+        {
+            _parent->dump_ty(out, ty);
         }
 
     private:

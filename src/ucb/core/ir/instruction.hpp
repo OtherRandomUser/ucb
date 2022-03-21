@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iterator>
+#include <ostream>
 #include <string>
 
 #include <ucb/core/ir/dilist.hpp>
@@ -43,6 +44,8 @@ namespace ucb
         const BasicBlock* get_bblock() const;
         long int get_integer_val() const;
         double get_float_val() const;
+
+        void dump(std::ostream& out) const;
 
     private:
         Operand(Procedure *parent);
@@ -112,10 +115,14 @@ namespace ucb
         TypeID ty() const { return _ty; }
         const std::string& id() const { return _id; }
 
+        void dump(std::ostream& out) const;
+
     private:
         BasicBlock *_parent;
         InstrOpcode _op;
         TypeID _ty;
         std::string _id; // TODO use an operand
+
+        void _dump_opnds(std::ostream& out);
     };
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <ostream>
 #include <vector>
 
 #include <ucb/core/ir/procedure.hpp>
@@ -67,6 +68,9 @@ namespace ucb
                 return it->first;
             }
         };
+
+        void dump(std::ostream& out) const;
+        void dump_ty(std::ostream& out, TypeID ty) const;
 
     private:
         int _next_ty_id{COMP_TY_START};

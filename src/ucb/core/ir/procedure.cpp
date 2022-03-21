@@ -126,4 +126,27 @@ namespace ucb
             return new Operand(this, ptr, is_def);
         }
     }
+
+    void Procedure::dump(std::ostream& out) const
+    {
+        _parent->dump_ty(out, _signature.ret());
+        out << " @" << _id << "(";
+        auto junc = "";
+
+        for (auto& arg: _signature.args())
+        {
+            _parent->dump_ty(out, arg.second);
+            out << " " << arg.first << junc;
+            junc = ", ";
+        }
+
+        out << "\n{\n";
+
+        for (auto& bblock: _bblocks)
+        {
+            bblock.dump(out);
+        }
+
+        out << "}\n";
+    }
 }

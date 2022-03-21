@@ -66,47 +66,170 @@ namespace ucb
         _ty = ty;
         _float_val = val; 
     }
-/*
-    VirtualRegister* Operand::get_virtual_reg()
+
+    void Operand::dump(std::ostream& out) const
     {
-        assert(_ty == OT_VIRTUAL_REG && "tried to access operand as virtual register");
-        return _virtual_reg;
+        _parent->dump_ty(out, _ty);
+        out << " ";
+
+        switch (_kind)
+        {
+            case OperandKind::OK_POISON:
+                out << "ERROR";
+                break;
+
+            case OperandKind::OK_VIRTUAL_REG:
+                out << _reg->id();
+                break;
+
+            case OperandKind::OK_INTEGER_CONST:
+                out << _integer_val;
+                break;
+
+            case OperandKind::OK_UNSIGNED_CONST:
+                out << _unsigned_val;
+                break;
+
+            case OperandKind::OK_FLOAT_CONST:
+                out << _float_val;
+                break;
+
+            case OperandKind::OK_BASIC_BLOCK:
+                out << _bblock->id();
+                break;
+
+            default:
+                assert(false && "unreachable");
+        }
     }
 
-    const VirtualRegister* Operand::get_virtual_reg() const
+    void Instruction::dump(std::ostream& out) const
     {
-        assert(_ty == OT_VIRTUAL_REG && "tried to access operand as virtual register");
-        return _virtual_reg;
+        switch (_op)
+        {
+            case InstrOpcode::OP_BR:
+                out << "br ";
+                _dump_opnds(out, " ");
+                out << '\n';
+                break;
+
+            case InstrOpcode::OP_BRC:
+                out << "brc ";
+                _dump_opnds(out, " ");
+                out << '\n';
+                break;
+
+            case InstrOpcode::OP_STORE:
+                out << "store ";
+                _dump_opnds(out, " ");
+                out << '\n';
+                break;
+
+            case InstrOpcode::OP_RET:
+                out << "ret ";
+                _dump_opnds(out, " ");
+                out << '\n';
+                break;
+
+            default:
+                auto it = begin();
+                assert(it != end() && "op must have at least one operand");
+                
+                it->dump(out);
+                it++;
+                out << " = ";
+
+                switch (_op)
+                {
+                    case InstrOpcode::OP_ADD:
+                        out << "add";
+                        break;
+
+                    case InstrOpcode::OP_SUB:
+                        out << "sub";
+                        break;
+
+                    case InstrOpcode::OP_MUL:
+                        out << "mul";
+                        break;
+
+                    case InstrOpcode::OP_DIV:
+                        out << "div";
+                        break;
+
+                    case InstrOpcode::OP_REM:
+                        out << "rem";
+                        break;
+
+                    case InstrOpcode::OP_NOT:
+                        out << "not";
+                        break;
+
+                    case InstrOpcode::OP_AND:
+                        out << "and";
+                        break;
+
+                    case InstrOpcode::OP_OR:
+                        out << "or";
+                        break;
+
+                    case InstrOpcode::OP_XOR:
+                        out << "xor";
+                        break;
+
+                    case InstrOpcode::OP_SHL:
+                        out << "shl";
+                        break;
+
+                    case InstrOpcode::OP_SHR:
+                        out << "shr";
+                        break;
+
+                    case InstrOpcode::OP_CAST:
+                        out << "cast";
+                        break;
+
+                    case InstrOpcode::OP_CMP:
+                        out << "cmp";
+                        break;
+
+                    case InstrOpcode::OP_LOAD:
+                        out << "load";
+                        break;
+
+                    case InstrOpcode::OP_CP:
+                        out << "cp";
+                        break;
+
+                    case InstrOpcode::OP_CALL:
+                        out << "call";
+                        break;
+
+                    default:
+                        assert(false && "unreachable");
+                }
+
+                while (it != end())
+                {
+                    out << " ";
+                    it->dump(out);
+                    it++;
+                }
+        }
     }
 
-    BasicBlock* Operand::get_bblock()
+    void Instruction::_dump_opnds(std::ostream& out, std::string junc)
     {
-        assert(_ty == OT_BASIC_BLOCK && "tried to access operand as basic block");
-        return _bblock;
-    }
+        auto it = begin();
+        auto j = "";
 
-    const BasicBlock* Operand::get_bblock() const
-    {
-        assert(_ty == OT_BASIC_BLOCK && "tried to access operand as basic block");
-        return _bblock;
-    }
-
-    long int Operand::get_integer_val() const
-    {
-        assert(_ty == OT_INTEGER_CONST && "tried to access operand as integer constant");
-        return _integer_val;
-    }
-
-    double Operand::get_float_val() const
-    {
-        assert(_ty == OT_FLOAT_CONST && "tried to access operand as float constant");
-        return _float_val;
-    }
-*/
-    std::string Instruction::dump() const
-    {
-        // TODO do this after writing dumps on types vregs and bblocks
-        return "instruction";
+        while (it != end())
+        {
+            out << j;
+            j = junc;
+            it->dump(out);
+            it++;
+        }
     }
 
     void Instruction::verify() const

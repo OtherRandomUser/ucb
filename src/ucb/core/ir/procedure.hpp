@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <ostream>
 #include <vector>
 
 #include <ucb/core/ir/basic-block.hpp>
@@ -59,6 +60,12 @@ namespace ucb
         VirtualRegister& add_frame_slot(std::string id, TypeID ty);
         VirtualRegister& add_vreg(std::string id, TypeID ty);
         Operand* operand_from_vreg(const std::string& id, bool is_def);
+
+        void dump(std::ostream& out) const;
+        void dump_ty(std::ostream& out, TypeID ty) const
+        {
+            _parent->dump_ty(out, ty);
+        }
 
     private:
         CompileUnit *_parent;
