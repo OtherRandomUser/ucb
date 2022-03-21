@@ -26,7 +26,7 @@ namespace ucb
                 sub
             );
 
-            auto it = std::find(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
+            auto it = std::find_if(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
                 return p.second == ty;
             });
@@ -52,7 +52,7 @@ namespace ucb
                 sub
             );
 
-            auto it = std::find(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
+            auto it = std::find_if(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
                 return p.second == ty;
             });

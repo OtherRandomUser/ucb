@@ -31,8 +31,9 @@ namespace ucb
 
             while (it != end())
             {
-                delete it;
+                auto d = it.data();
                 it++;
+                delete d;
             }
         }
 
@@ -216,18 +217,19 @@ namespace ucb
 
         DIListIterator(T *prev, T *cur):
             _cur{cur},
-            _prev{_prev}
+            _prev{prev}
         {
         }
 
+        T* data() { return _cur; }
         T& operator * () { return *_cur; }
 
-        bool operator != (const T& other)
+        bool operator != (const DIListIterator<T>& other)
         {
             return _cur != other._cur;
         }
 
-        T& operator ++ ()
+        DIListIterator<T>& operator ++ ()
         {
             assert(_cur);
             _prev = _cur;
@@ -235,7 +237,7 @@ namespace ucb
             return *this;
         }
 
-        T& operator -- ()
+        DIListIterator<T>& operator -- ()
         {
             assert(_prev);
             _cur = _prev;
@@ -243,7 +245,7 @@ namespace ucb
             return *this;
         }
 
-        T& operator ++ (int)
+        DIListIterator<T> operator ++ (int)
         {
             assert(_cur);
             auto prev = _prev;
@@ -252,13 +254,13 @@ namespace ucb
             return DIListIterator(prev, _prev);
         }
 
-        T& operator -- (int)
+        DIListIterator<T> operator -- (int)
         {
             assert(_prev);
             auto cur = _cur;
             _cur = _prev;
             _prev = _prev->_prev;
-            return IDListIterator(_cur, cur);
+            return DIListIterator(_cur, cur);
         }
 
     private:

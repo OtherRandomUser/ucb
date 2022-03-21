@@ -149,4 +149,9 @@ namespace ucb
 
         out << "}\n";
     }
+
+    void Procedure::dump_ty(std::ostream& out, TypeID ty) const
+    {
+        _parent->dump_ty(out, ty);
+    }
 }

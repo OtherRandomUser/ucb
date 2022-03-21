@@ -7,7 +7,7 @@
 
 namespace ucb
 {
-    Operand::Operand(Procedure *parent):
+    Operand::Operand(std::shared_ptr<Procedure> parent):
         _parent{parent},
         _ty{TypeID::T_VOID},
         _kind{OperandKind::OK_POISON},
@@ -21,7 +21,7 @@ namespace ucb
         assert(parent && "parent is null");
     }
 
-    Operand::Operand(Procedure *parent, VirtualRegister *reg, bool is_def):
+    Operand::Operand(std::shared_ptr<Procedure> parent, VirtualRegister *reg, bool is_def):
         Operand(parent)
     {
         assert(reg && "Virtual register is null");
@@ -31,7 +31,7 @@ namespace ucb
         _reg = reg;
     }
 
-    Operand::Operand(Procedure *parent, BasicBlock *bblock):
+    Operand::Operand(std::shared_ptr<Procedure> parent, BasicBlock *bblock):
         Operand(parent)
     {
         assert(bblock && "Basic Block is null");
@@ -40,7 +40,7 @@ namespace ucb
         _bblock = bblock;
     }
 
-    Operand::Operand(Procedure *parent, long int val, TypeID ty):
+    Operand::Operand(std::shared_ptr<Procedure> parent, long int val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_signed_int(ty) && "expected an integer type");
@@ -49,7 +49,7 @@ namespace ucb
         _integer_val = val; 
     }
 
-    Operand::Operand(Procedure *parent, unsigned long val, TypeID ty):
+    Operand::Operand(std::shared_ptr<Procedure> parent, unsigned long val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_unsigned_int(ty) && "expected an unsigned integer type");
@@ -58,7 +58,7 @@ namespace ucb
         _unsigned_val = val; 
     }
 
-    Operand::Operand(Procedure *parent, double val, TypeID ty):
+    Operand::Operand(std::shared_ptr<Procedure> parent, double val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_float(ty) && "expected a float type");

@@ -8,7 +8,9 @@
 
 namespace ucb
 {
-    class BasicBlock : public DIList<Instruction>
+    class BasicBlock :
+        public DIList<Instruction>,
+        public IListNode<BasicBlock>
     {
     public:
         BasicBlock(Procedure *parent, std::string id):
@@ -27,11 +29,15 @@ namespace ucb
             return *instr;
         }
 
-        void dump(std::ostream& out) const;
-        void dump_ty(std::ostream& out, TypeID ty) const
+        Instruction& append_instr(InstrOpcode op, TypeID ty, std::string id)
         {
-            _parent->dump_ty(out, ty);
+            auto instr = new Instruction(this, op, ty, std::move(id));
+            append(instr);
+            return *instr;
         }
+
+        void dump(std::ostream& out) const;
+        void dump_ty(std::ostream& out, TypeID ty) const;
 
     private:
         Procedure *_parent;

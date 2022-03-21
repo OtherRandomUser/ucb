@@ -4,6 +4,7 @@
 #include <ostream>
 #include <vector>
 
+#include <ucb/core/ir/compile-unit.hpp>
 #include <ucb/core/ir/basic-block.hpp>
 #include <ucb/core/ir/ilist.hpp>
 #include <ucb/core/ir/virtual-register.hpp>
@@ -62,10 +63,7 @@ namespace ucb
         Operand* operand_from_vreg(const std::string& id, bool is_def);
 
         void dump(std::ostream& out) const;
-        void dump_ty(std::ostream& out, TypeID ty) const
-        {
-            _parent->dump_ty(out, ty);
-        }
+        void dump_ty(std::ostream& out, TypeID ty) const;
 
     private:
         CompileUnit *_parent;

@@ -33,8 +33,9 @@ namespace ucb
 
             while (it != end())
             {
-                delete it;
+                auto d = it.data();
                 it++;
+                delete d;
             }
         }
 
@@ -211,17 +212,17 @@ namespace ucb
             return _cur != other._cur;
         }
 
-        T& operator++ ()
+        IListIterator<T>& operator++ ()
         {
             _cur = _cur->_next;
             return *this;
         }
 
-        T& operator++ (int)
+        IListIterator<T> operator++ (int)
         {
             auto cur = _cur;
             _cur = _cur->_next;
-            return IListIterator(cur);
+            return IListIterator<T>(cur);
         }
 
     private:
