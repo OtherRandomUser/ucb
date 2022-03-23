@@ -172,6 +172,9 @@ namespace ucb::frontend
             auto id = _eat_id();
             auto ty = KEYWORD_TBL.find(id);
 
+            std::cout << "id " << id << "\n";
+            std::cout << "id " << id.size() << "\n";
+
             if (ty != KEYWORD_TBL.end())
             {
                 DEBUG_LOC("read keyword token with lexema '{}'", _build_lexema());
@@ -310,7 +313,7 @@ namespace ucb::frontend
                 break;
         }
 
-        return std::string(start, _cursor);
+        return std::string(start, _cursor - 1);
     }
 
     std::string_view Lexer::_build_lexema()

@@ -92,4 +92,21 @@ namespace ucb
         return ty == TypeID::T_F32
             || ty == TypeID::T_F64;
     }
+
+    class ProcSignature
+    {
+    public:
+        ProcSignature(TypeID ty):
+            _ty{ty}
+        {
+        }
+
+        TypeID ret() const { return _ty; };
+        std::vector<std::pair<std::string, TypeID>>& args() { return _args; }
+        const std::vector<std::pair<std::string, TypeID>>& args() const { return _args; }
+
+    private:
+        TypeID _ty;
+        std::vector<std::pair<std::string, TypeID>> _args;
+    };
 }

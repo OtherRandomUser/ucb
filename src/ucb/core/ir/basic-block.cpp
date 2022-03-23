@@ -2,7 +2,7 @@
 
 namespace ucb
 {
-    void BasicBlock::dump(std::ostream& out) const
+    void BasicBlock::dump(std::ostream& out)
     {
         out << _id << ":\n";
 
@@ -10,14 +10,14 @@ namespace ucb
 
         while (it != end())
         {
-            it->dump(out);
+            (*it).dump(out);
             it++;
         }
 
         out << '\n';
     }
 
-    void BasicBlock::dump_ty(std::ostream& out, TypeID ty) const
+    void BasicBlock::dump_ty(std::ostream& out, TypeID ty)
     {
         _parent->dump_ty(out, ty);
     }

@@ -7,7 +7,7 @@
 
 namespace ucb
 {
-    Operand::Operand(std::shared_ptr<Procedure> parent):
+    Operand::Operand(Procedure *parent):
         _parent{parent},
         _ty{TypeID::T_VOID},
         _kind{OperandKind::OK_POISON},
@@ -21,7 +21,7 @@ namespace ucb
         assert(parent && "parent is null");
     }
 
-    Operand::Operand(std::shared_ptr<Procedure> parent, VirtualRegister *reg, bool is_def):
+    Operand::Operand(Procedure *parent, VirtualRegister *reg, bool is_def):
         Operand(parent)
     {
         assert(reg && "Virtual register is null");
@@ -31,7 +31,7 @@ namespace ucb
         _reg = reg;
     }
 
-    Operand::Operand(std::shared_ptr<Procedure> parent, BasicBlock *bblock):
+    Operand::Operand(Procedure *parent, BasicBlock *bblock):
         Operand(parent)
     {
         assert(bblock && "Basic Block is null");
@@ -40,7 +40,7 @@ namespace ucb
         _bblock = bblock;
     }
 
-    Operand::Operand(std::shared_ptr<Procedure> parent, long int val, TypeID ty):
+    Operand::Operand(Procedure *parent, long int val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_signed_int(ty) && "expected an integer type");
@@ -49,7 +49,7 @@ namespace ucb
         _integer_val = val; 
     }
 
-    Operand::Operand(std::shared_ptr<Procedure> parent, unsigned long val, TypeID ty):
+    Operand::Operand(Procedure *parent, unsigned long val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_unsigned_int(ty) && "expected an unsigned integer type");
@@ -58,7 +58,7 @@ namespace ucb
         _unsigned_val = val; 
     }
 
-    Operand::Operand(std::shared_ptr<Procedure> parent, double val, TypeID ty):
+    Operand::Operand(Procedure *parent, double val, TypeID ty):
         Operand(parent)
     {
         assert(ty_is_float(ty) && "expected a float type");
@@ -67,7 +67,7 @@ namespace ucb
         _float_val = val; 
     }
 
-    void Operand::dump(std::ostream& out) const
+    void Operand::dump(std::ostream& out)
     {
         _parent->dump_ty(out, _ty);
         out << " ";
@@ -103,31 +103,31 @@ namespace ucb
         }
     }
 
-    void Instruction::dump(std::ostream& out) const
+    void Instruction::dump(std::ostream& out)
     {
         switch (_op)
         {
             case InstrOpcode::OP_BR:
                 out << "br ";
-                _dump_opnds(out, " ");
+                _dump_opnds(out);
                 out << '\n';
                 break;
 
             case InstrOpcode::OP_BRC:
                 out << "brc ";
-                _dump_opnds(out, " ");
+                _dump_opnds(out);
                 out << '\n';
                 break;
 
             case InstrOpcode::OP_STORE:
                 out << "store ";
-                _dump_opnds(out, " ");
+                _dump_opnds(out);
                 out << '\n';
                 break;
 
             case InstrOpcode::OP_RET:
                 out << "ret ";
-                _dump_opnds(out, " ");
+                _dump_opnds(out);
                 out << '\n';
                 break;
 
@@ -218,7 +218,7 @@ namespace ucb
         }
     }
 
-    void Instruction::_dump_opnds(std::ostream& out, std::string junc)
+    void Instruction::_dump_opnds(std::ostream& out)
     {
         auto it = begin();
         auto j = "";
@@ -226,13 +226,13 @@ namespace ucb
         while (it != end())
         {
             out << j;
-            j = junc;
+            j = " ";
             it->dump(out);
             it++;
         }
     }
 
-    void Instruction::verify() const
+    void Instruction::verify()
     {
         /* TODO do this after dump is working
         switch(_op)

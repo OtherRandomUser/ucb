@@ -29,7 +29,7 @@ namespace ucb::frontend
     private:
         std::string _filename;
         std::shared_ptr<CompileUnit> _compile_unit;
-        std::shared_ptr<Procedure> _proc;
+        Procedure *_proc;
         BasicBlock *_bblock;
         Lexer _lex;
         Token _cur;

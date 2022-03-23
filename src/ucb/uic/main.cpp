@@ -41,7 +41,14 @@ int main(int argc, char **argv)
 
     po::notify(vm);
 
-    frontend::Lexer lex(vm["input-file"].as<std::string>(), true);
+    auto context = std::make_shared<CompileUnit>();
+    frontend::Parser parser(vm["input-file"].as<std::string>(), context, false, false);
+
+    if (!parser.parse_unit())
+    {
+        std::cerr << "parse failure!!!\n";
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }

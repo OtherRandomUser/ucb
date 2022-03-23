@@ -29,11 +29,11 @@ namespace ucb
     class Operand : public IListNode<Operand>
     {
     public:
-        Operand(std::shared_ptr<Procedure> parent, VirtualRegister *reg, bool is_def);
-        Operand(std::shared_ptr<Procedure> parent, BasicBlock *bblock);
-        Operand(std::shared_ptr<Procedure> parent, long int val, TypeID ty);
-        Operand(std::shared_ptr<Procedure> parent, unsigned long val, TypeID ty);
-        Operand(std::shared_ptr<Procedure> parent, double val, TypeID ty);
+        Operand(Procedure *parent, VirtualRegister *reg, bool is_def);
+        Operand(Procedure *parent, BasicBlock *bblock);
+        Operand(Procedure *parent, long int val, TypeID ty);
+        Operand(Procedure *parent, unsigned long val, TypeID ty);
+        Operand(Procedure *parent, double val, TypeID ty);
 
         OperandKind kind() const { return _kind; }
         const TypeID ty() const { return _ty; }
@@ -45,12 +45,12 @@ namespace ucb
         long int get_integer_val() const;
         double get_float_val() const;
 
-        void dump(std::ostream& out) const;
+        void dump(std::ostream& out);
 
     private:
-        Operand(std::shared_ptr<Procedure> parent);
+        Operand(Procedure *parent);
 
-        std::shared_ptr<Procedure> _parent;
+        Procedure *_parent;
         TypeID _ty;
         OperandKind _kind;
 
@@ -106,8 +106,8 @@ namespace ucb
             _id = std::move(id);
         }
 
-        std::string dump() const;
-        void verify() const;
+        std::string dump();
+        void verify();
 
         BasicBlock* parent() { return _parent; }
         const BasicBlock* parent() const { return _parent; }
@@ -115,7 +115,7 @@ namespace ucb
         TypeID ty() const { return _ty; }
         const std::string& id() const { return _id; }
 
-        void dump(std::ostream& out) const;
+        void dump(std::ostream& out);
 
     private:
         BasicBlock *_parent;

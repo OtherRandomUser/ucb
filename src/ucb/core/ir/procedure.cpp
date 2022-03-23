@@ -22,14 +22,14 @@ namespace ucb
     {
         auto ptr = find_bblock(id);
 
-        if (prs != nullptr)
+        if (ptr != nullptr)
         {
             return nullptr;
         }
         else
         {
             _bblocks.emplace_back(this, std::move(id));
-            return _bblocks.back();
+            return &_bblocks.back();
         }
     }
 
@@ -80,7 +80,7 @@ namespace ucb
         return nullptr;
     }
 
-    VirtualRegister& Procedure::add_frame_slot(std::string id, TypeID ty)
+    VirtualRegister *Procedure::add_frame_slot(std::string id, TypeID ty)
     {
         auto ptr = find_vreg(id);
 
@@ -92,11 +92,11 @@ namespace ucb
         else
         {
             _frame.emplace_back(this, std::move(id), ty);
-            return _bblocks.back();
+            return &_frame.back();
         }
     }
 
-    VirtualRegister& Procedure::add_vreg(std::string id, TypeID ty)
+    VirtualRegister *Procedure::add_vreg(std::string id, TypeID ty)
     {
         auto ptr = find_vreg(id);
 
@@ -108,7 +108,7 @@ namespace ucb
         else
         {
             _regs.emplace_back(this, std::move(id), ty);
-            return _bblocks.back();
+            return &_regs.back();
         }
     }
 
@@ -127,7 +127,7 @@ namespace ucb
         }
     }
 
-    void Procedure::dump(std::ostream& out) const
+    void Procedure::dump(std::ostream& out)
     {
         _parent->dump_ty(out, _signature.ret());
         out << " @" << _id << "(";
@@ -150,7 +150,7 @@ namespace ucb
         out << "}\n";
     }
 
-    void Procedure::dump_ty(std::ostream& out, TypeID ty) const
+    void Procedure::dump_ty(std::ostream& out, TypeID ty)
     {
         _parent->dump_ty(out, ty);
     }

@@ -724,6 +724,7 @@ namespace ucb::frontend
             return true;
         }
 
+        std::cout << "ty " << _cur.ty << "\n";
         CHECK_TK(_cur, tk_is_type(_cur), "a type identifier");
         _bump();
 

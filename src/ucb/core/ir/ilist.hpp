@@ -212,6 +212,8 @@ namespace ucb
             return _cur != other._cur;
         }
 
+        T* operator -> () { return _cur; }
+
         IListIterator<T>& operator++ ()
         {
             _cur = _cur->_next;

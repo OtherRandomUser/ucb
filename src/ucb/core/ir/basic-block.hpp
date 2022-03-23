@@ -36,8 +36,8 @@ namespace ucb
             return *instr;
         }
 
-        void dump(std::ostream& out) const;
-        void dump_ty(std::ostream& out, TypeID ty) const;
+        void dump(std::ostream& out);
+        void dump_ty(std::ostream& out, TypeID ty);
 
     private:
         Procedure *_parent;

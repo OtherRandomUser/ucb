@@ -9,13 +9,13 @@
 
 namespace ucb
 {
+    class Procedure;
+
     class CompileUnit
     {
     public:
-        CompileUnit();
-
-        std::shared_ptr<Procedure> add_procedure(ProcSignature sig, std::string id);
-        std::shared_ptr<Procedure> get_procedure(const std::string& id);
+        Procedure* add_procedure(ProcSignature sig, std::string id);
+        Procedure* get_procedure(const std::string& id);
 
         TypeID get_ptr_ty(TypeID sub)
         {
@@ -69,12 +69,12 @@ namespace ucb
             }
         };
 
-        void dump(std::ostream& out) const;
-        void dump_ty(std::ostream& out, TypeID ty) const;
+        void dump(std::ostream& out);
+        void dump_ty(std::ostream& out, TypeID ty);
 
     private:
         int _next_ty_id{COMP_TY_START};
         std::vector<std::pair<TypeID, CompositeType>> _comp_tys;
-        std::vector<std::shared_ptr<Procedure>> _procs;
+        std::vector<Procedure> _procs;
     };
 }

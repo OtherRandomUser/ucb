@@ -1,8 +1,10 @@
 #include <ucb/core/ir/compile-unit.hpp>
 
+#include <ucb/core/ir/procedure.hpp>
+
 namespace ucb
 {
-    std::shared_ptr<Procedure> CompileUnit::add_procedure(ProcSignature sig, std::string id)
+    Procedure *CompileUnit::add_procedure(ProcSignature sig, std::string id)
     {
         if (get_procedure(id) != nullptr)
         {
@@ -10,22 +12,21 @@ namespace ucb
             abort();
         }
 
-        auto proc = std::make_shared<Procedure>(this, std::move(id), std::move(sig));
-        _procs.push_back(proc);
-        return proc;
+        _procs.emplace_back(this, std::move(id), std::move(sig));
+        return &_procs.back();
     }
 
 
-    std::shared_ptr<Procedure> CompileUnit::get_procedure(const std::string& id)
+    Procedure* CompileUnit::get_procedure(const std::string& id)
     {
-        auto it = std::find_if(_procs.begin(), _procs.end(), [&](auto p)
+        auto it = std::find_if(_procs.begin(), _procs.end(), [&](auto& p)
         {
-            return p->id() == id;
+            return p.id() == id;
         });
 
         if (it != _procs.end())
         {
-            return *it;
+            return &(*it);
         }
         else
         {
@@ -33,25 +34,25 @@ namespace ucb
         }
     }
 
-    void CompileUnit::dump(std::ostream& out) const
+    void CompileUnit::dump(std::ostream& out)
     {
-        auto junc = '';
+        auto junc = "";
 
         for (auto& proc: _procs)
         {
             out << junc;
-            junc = '\n';
-            proc->dump(out);
+            junc = "\n";
+            proc.dump(out);
         }
     }
 
-    void CompileUnit::dump_ty(std::ostream& out, TypeID ty) const
+    void CompileUnit::dump_ty(std::ostream& out, TypeID ty)
     {
         if (ty >= COMP_TY_START)
         {
-            auto it = std::find(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
+            auto it = std::find_if(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
-                return p.second == ty;
+                return p.first == ty;
             });
 
             if (it == _comp_tys.end())
@@ -64,12 +65,12 @@ namespace ucb
 
             switch (cty.kind())
             {
-                case CompositeTyKind::CTK_PTR:
+                case CompositeType::CompositeTyKind::CTK_PTR:
                     out << '^';
                     dump_ty(out, cty.sub());
                     break;
 
-                case CompositeTyKind::CTK_ARR:
+                case CompositeType::CompositeTyKind::CTK_ARR:
                     out << "array " << cty.size() << " of ";
                     dump_ty(out, cty.sub());
                     break;

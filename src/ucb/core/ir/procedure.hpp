@@ -11,23 +11,6 @@
 
 namespace ucb
 {
-    class ProcSignature
-    {
-    public:
-        ProcSignature(TypeID ty):
-            _ty{ty}
-        {
-        }
-
-        TypeID ret() const { return _ty; };
-        std::vector<std::pair<std::string, TypeID>>& args() { return _args; }
-        const std::vector<std::pair<std::string, TypeID>>& args() const { return _args; }
-
-    private:
-        TypeID _ty;
-        std::vector<std::pair<std::string, TypeID>> _args;
-    };
-
     class Procedure : public IList<BasicBlock>
     {
     public:
@@ -58,12 +41,12 @@ namespace ucb
         BasicBlock* add_bblock(std::string id);
         Operand* operand_from_bblock(const std::string& id);
         VirtualRegister* find_vreg(const std::string& id);
-        VirtualRegister& add_frame_slot(std::string id, TypeID ty);
-        VirtualRegister& add_vreg(std::string id, TypeID ty);
+        VirtualRegister* add_frame_slot(std::string id, TypeID ty);
+        VirtualRegister* add_vreg(std::string id, TypeID ty);
         Operand* operand_from_vreg(const std::string& id, bool is_def);
 
-        void dump(std::ostream& out) const;
-        void dump_ty(std::ostream& out, TypeID ty) const;
+        void dump(std::ostream& out);
+        void dump_ty(std::ostream& out, TypeID ty);
 
     private:
         CompileUnit *_parent;
