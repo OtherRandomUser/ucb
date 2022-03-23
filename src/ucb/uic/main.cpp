@@ -50,5 +50,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    context->dump(std::cout);
+
     return EXIT_SUCCESS;
 }

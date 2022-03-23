@@ -41,7 +41,7 @@ namespace ucb
 
         IListIterator<T> begin() { return IListIterator<T>(_head); }
 
-        IListIterator<T> end() { return IListIterator<T>(_head); }
+        IListIterator<T> end() { return IListIterator<T>(nullptr); }
 
         size_t size() const
         {

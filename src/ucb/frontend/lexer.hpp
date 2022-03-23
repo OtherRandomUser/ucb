@@ -36,9 +36,9 @@ namespace ucb::frontend
         Token _read_comment_ln_tk();
         Token _read_str_tk();
         Token _read_numeric_tk();
-        std::string _eat_id();
+        std::string _eat_id(int skip_cnt);
 
-        std::string_view _build_lexema();
-        Token _build_tk(TokenType ty);
+        std::string_view _build_lexema(int skip_cnt = 0);
+        Token _build_tk(TokenType ty, int skip_cnt = 0);
     };
 }

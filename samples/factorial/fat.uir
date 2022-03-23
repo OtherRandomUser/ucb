@@ -1,4 +1,4 @@
-i32 @fat(i32 %n)
+i32  @fat(i32 %n)
 {
     %n.ref = alloc i32
     store i32 %n ^i32 %n.ref

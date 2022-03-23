@@ -85,6 +85,7 @@ namespace ucb::frontend
             || c == ','
             || c == '='
             || c == ';'
+            || c == ':'
             || c == '('
             || c == ')';
     }
@@ -151,38 +152,35 @@ namespace ucb::frontend
             if (is_op(c))
             {
                 _cursor++;
-                DEBUG_LOC("read op token with lexema '{}'", _build_lexema());
+                DEBUG_LOC("read op token with lexema '{}'\n", _build_lexema());
                 return _build_tk(static_cast<TokenType>(c));
             }
 
             if (c == '@')
             {
-                _eat_id();
-                DEBUG_LOC("read global id token with lexema '{}'", _build_lexema());
-                return _build_tk(TokenType::ID_GLOBAL);
+                _eat_id(1);
+                DEBUG_LOC("read global id token with lexema '{}'\n", _build_lexema(1));
+                return _build_tk(TokenType::ID_GLOBAL, 1);
             }
 
             if (c == '%')
             {
-                _eat_id();
-                DEBUG_LOC("read local id token with lexema '{}'", _build_lexema());
-                return _build_tk(TokenType::ID_LOCAL);
+                _eat_id(1);
+                DEBUG_LOC("read local id token with lexema '{}'\n", _build_lexema(1));
+                return _build_tk(TokenType::ID_LOCAL, 1);
             }
 
-            auto id = _eat_id();
+            auto id = _eat_id(0);
             auto ty = KEYWORD_TBL.find(id);
-
-            std::cout << "id " << id << "\n";
-            std::cout << "id " << id.size() << "\n";
 
             if (ty != KEYWORD_TBL.end())
             {
-                DEBUG_LOC("read keyword token with lexema '{}'", _build_lexema());
+                DEBUG_LOC("read keyword token with lexema '{}'\n", _build_lexema());
                 return _build_tk(ty->second);
             }
             else
             {
-                DEBUG_LOC("read other token with lexema '{}'", _build_lexema());
+                DEBUG_LOC("read other token with lexema '{}'\n", _build_lexema());
                 return _build_tk(TokenType::ID_OTHER);
             }
         }
@@ -196,14 +194,16 @@ namespace ucb::frontend
 
     Token Lexer::_read_whitespace_tk()
     {
-        DEBUG("Reading whitespace token");
+        DEBUG("Reading whitespace token\n");
 
         while (_cursor != _src.end())
         {
             auto c = *_cursor;
 
             if (!is_whitespace(c))
+            {
                 break;
+            }
 
             _cursor++;
             _col++;
@@ -215,13 +215,13 @@ namespace ucb::frontend
             }
         }
 
-        DEBUG_LOC("read whitespace token");
+        DEBUG_LOC("read whitespace token\n");
         return _build_tk(TokenType::WHITESPACE);
     }
 
     Token Lexer::_read_comment_ln_tk()
     {
-        DEBUG("Reading comment line token");
+        DEBUG("Reading comment line token\n");
 
         while (_cursor != _src.end())
         {
@@ -239,13 +239,13 @@ namespace ucb::frontend
             }
         }
 
-        DEBUG_LOC("read comment line token with lexema '{}'", _build_lexema());
+        DEBUG_LOC("read comment line token with lexema '{}'\n", _build_lexema());
         ERROR("expected new line but found end of file");
     }
 
     Token Lexer::_read_str_tk()
     {
-        DEBUG("Reading string literal token");
+        DEBUG("Reading string literal token\n");
 
         while (_cursor != _src.end())
         {
@@ -258,13 +258,13 @@ namespace ucb::frontend
                 return _build_tk(TokenType::LT_STRING);
         }
 
-        DEBUG_LOC("read string literal token with lexema '{}'", _build_lexema());
+        DEBUG_LOC("read string literal token with lexema '{}'\n", _build_lexema());
         ERROR("expected '\"' but found end of file");
     }
 
     Token Lexer::_read_numeric_tk()
     {
-        DEBUG("Reading numeric token");
+        DEBUG("Reading numeric token\n");
 
         while (_cursor != _src.end())
         {
@@ -277,14 +277,15 @@ namespace ucb::frontend
             {
                 while (_cursor != _src.end())
                 {
-                    auto d = *_cursor;
-
                     _cursor++;
                     _col++;
 
+                    auto d = *_cursor;
+
+
                     if (d < '0' || d > '9')
                     {
-                        DEBUG_LOC("read floating point literal with lexema '{}'", _build_lexema());
+                        DEBUG_LOC("read floating point literal with lexema '{}'\n", _build_lexema());
                         return _build_tk(TokenType::LT_FLOAT);
                     }
                 }
@@ -294,42 +295,44 @@ namespace ucb::frontend
                 break;
         }
 
-        DEBUG_LOC("read integer literal with lexema '{}'", _build_lexema());
+        DEBUG_LOC("read integer literal with lexema '{}'\n", _build_lexema());
         return _build_tk(TokenType::LT_INT);
     }
 
-    std::string Lexer::_eat_id()
+    std::string Lexer::_eat_id(int skip_cnt)
     {
-        auto start = _cursor;
+        auto start = _cursor + skip_cnt;
 
         while (_cursor != _src.end())
         {
-            auto c = *_cursor;
 
             _cursor++;
             _col++;
+            auto c = *_cursor;
 
             if (is_whitespace(c) || is_op(c))
                 break;
         }
 
-        return std::string(start, _cursor - 1);
+        return std::string(start, _cursor/* - 1*/);
     }
 
-    std::string_view Lexer::_build_lexema()
+    std::string_view Lexer::_build_lexema(int skip_cnt)
     {
-        return std::string_view(_head_cursor, _cursor);
+        return std::string_view(_head_cursor + skip_cnt, _cursor/* - 1*/);
     }
 
-    Token Lexer::_build_tk(TokenType ty)
+    Token Lexer::_build_tk(TokenType ty, int skip_cnt)
     {
         auto row = _head_row;
         auto col = _head_col;
-        std::string_view lex(_head_cursor, _cursor);
+        std::string_view lex(_head_cursor + skip_cnt, _cursor/* - 1*/);
 
         _head_row = _row;
         _head_col = _col;
         _head_cursor = _cursor;
+        // _head_cursor = _cursor - 1;
+        // _cursor = _cursor - 1;
 
         return {
             .ty     = ty,

@@ -105,117 +105,96 @@ namespace ucb
 
     void Instruction::dump(std::ostream& out)
     {
+        out << "\t";
+
         switch (_op)
         {
             case InstrOpcode::OP_BR:
-                out << "br ";
-                _dump_opnds(out);
-                out << '\n';
+                out << "br\t";
                 break;
 
             case InstrOpcode::OP_BRC:
-                out << "brc ";
-                _dump_opnds(out);
-                out << '\n';
+                out << "brc\t";
                 break;
 
             case InstrOpcode::OP_STORE:
-                out << "store ";
-                _dump_opnds(out);
-                out << '\n';
+                out << "store\t";
                 break;
 
             case InstrOpcode::OP_RET:
-                out << "ret ";
-                _dump_opnds(out);
-                out << '\n';
+                out << "ret\t";
+                break;
+
+            case InstrOpcode::OP_ADD:
+                out << "add\t";
+                break;
+
+            case InstrOpcode::OP_SUB:
+                out << "sub\t";
+                break;
+
+            case InstrOpcode::OP_MUL:
+                out << "mul\t";
+                break;
+
+            case InstrOpcode::OP_DIV:
+                out << "div\t";
+                break;
+
+            case InstrOpcode::OP_REM:
+                out << "rem\t";
+                break;
+
+            case InstrOpcode::OP_NOT:
+                out << "not\t";
+                break;
+
+            case InstrOpcode::OP_AND:
+                out << "and\t";
+                break;
+
+            case InstrOpcode::OP_OR:
+                out << "or\t";
+                break;
+
+            case InstrOpcode::OP_XOR:
+                out << "xor\t";
+                break;
+
+            case InstrOpcode::OP_SHL:
+                out << "shl\t";
+                break;
+
+            case InstrOpcode::OP_SHR:
+                out << "shr\t";
+                break;
+
+            case InstrOpcode::OP_CAST:
+                out << "cast\t";
+                break;
+
+            case InstrOpcode::OP_CMP:
+                out << "cmp\t";
+                break;
+
+            case InstrOpcode::OP_LOAD:
+                out << "load\t";
+                break;
+
+            case InstrOpcode::OP_CP:
+                out << "cp\t";
+                break;
+
+            case InstrOpcode::OP_CALL:
+                out << "call\t";
                 break;
 
             default:
-                auto it = begin();
-                assert(it != end() && "op must have at least one operand");
-                
-                it->dump(out);
-                it++;
-                out << " = ";
-
-                switch (_op)
-                {
-                    case InstrOpcode::OP_ADD:
-                        out << "add";
-                        break;
-
-                    case InstrOpcode::OP_SUB:
-                        out << "sub";
-                        break;
-
-                    case InstrOpcode::OP_MUL:
-                        out << "mul";
-                        break;
-
-                    case InstrOpcode::OP_DIV:
-                        out << "div";
-                        break;
-
-                    case InstrOpcode::OP_REM:
-                        out << "rem";
-                        break;
-
-                    case InstrOpcode::OP_NOT:
-                        out << "not";
-                        break;
-
-                    case InstrOpcode::OP_AND:
-                        out << "and";
-                        break;
-
-                    case InstrOpcode::OP_OR:
-                        out << "or";
-                        break;
-
-                    case InstrOpcode::OP_XOR:
-                        out << "xor";
-                        break;
-
-                    case InstrOpcode::OP_SHL:
-                        out << "shl";
-                        break;
-
-                    case InstrOpcode::OP_SHR:
-                        out << "shr";
-                        break;
-
-                    case InstrOpcode::OP_CAST:
-                        out << "cast";
-                        break;
-
-                    case InstrOpcode::OP_CMP:
-                        out << "cmp";
-                        break;
-
-                    case InstrOpcode::OP_LOAD:
-                        out << "load";
-                        break;
-
-                    case InstrOpcode::OP_CP:
-                        out << "cp";
-                        break;
-
-                    case InstrOpcode::OP_CALL:
-                        out << "call";
-                        break;
-
-                    default:
-                        assert(false && "unreachable");
-                }
-
-                while (it != end())
-                {
-                    out << " ";
-                    it->dump(out);
-                    it++;
-                }
+                assert(false && "unreachable");
         }
+
+        _dump_opnds(out);
+        out << '\n';
     }
 
     void Instruction::_dump_opnds(std::ostream& out)

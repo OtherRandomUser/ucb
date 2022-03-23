@@ -140,7 +140,7 @@ namespace ucb
             junc = ", ";
         }
 
-        out << "\n{\n";
+        out << ")\n{\n";
 
         for (auto& bblock: _bblocks)
         {
