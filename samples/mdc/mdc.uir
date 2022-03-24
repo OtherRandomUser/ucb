@@ -39,3 +39,4 @@ if_end:
 while_end:
     %a.5 = load i32 ^i32 %a.ref
     ret i32 %a.5
+}

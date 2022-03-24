@@ -6,12 +6,11 @@
 
 #include <ucb/core/ir/compile-unit.hpp>
 #include <ucb/core/ir/basic-block.hpp>
-#include <ucb/core/ir/ilist.hpp>
 #include <ucb/core/ir/virtual-register.hpp>
 
 namespace ucb
 {
-    class Procedure : public IList<BasicBlock>
+    class Procedure
     {
     public:
         Procedure(CompileUnit *parent, std::string id, ProcSignature signature):
@@ -19,17 +18,21 @@ namespace ucb
             _id(std::move(id)),
             _signature(std::move(signature))
         {
+            _bblocks.reserve(100);
             for (auto& arg: _signature.args())
             {
-                _params.emplace_back(this, arg.first, arg.second);
+                _params.emplace_back(_next_vreg++, VirtualRegister{this, arg.first, arg.second});
             }
         }
 
         const std::string& id() const { return _id; }
         const ProcSignature& signature() { return _signature; }
-        std::vector<VirtualRegister>& params() { return _params; }
-        std::vector<VirtualRegister>& frame() { return _frame; }
-        std::vector<VirtualRegister>& regs() { return _regs; }
+
+        using RegSlot = std::pair<RegisterID, VirtualRegister>;
+
+        std::vector<RegSlot>& params() { return _params; }
+        std::vector<RegSlot>& frame() { return _frame; }
+        std::vector<RegSlot>& regs() { return _regs; }
 
         BasicBlock& entry()
         {
@@ -37,13 +40,16 @@ namespace ucb
             return *_bblocks.begin();
         }
 
-        BasicBlock* find_bblock(const std::string& id);
-        BasicBlock* add_bblock(std::string id);
-        Operand* operand_from_bblock(const std::string& id);
-        VirtualRegister* find_vreg(const std::string& id);
-        VirtualRegister* add_frame_slot(std::string id, TypeID ty);
-        VirtualRegister* add_vreg(std::string id, TypeID ty);
-        Operand* operand_from_vreg(const std::string& id, bool is_def);
+        int find_bblock(const std::string& id);
+        BasicBlock* get_bblock(int idx);
+        int add_bblock(std::string id);
+        Operand operand_from_bblock(const std::string& id);
+
+        RegisterID find_vreg(const std::string& id);
+        const VirtualRegister* get_register(RegisterID id) const;
+        RegisterID add_frame_slot(std::string id, TypeID ty);
+        RegisterID add_vreg(std::string id, TypeID ty);
+        Operand operand_from_vreg(const std::string& id, bool is_def);
 
         void dump(std::ostream& out);
         void dump_ty(std::ostream& out, TypeID ty);
@@ -54,9 +60,11 @@ namespace ucb
         ProcSignature _signature;
         std::string _id;
 
-        std::vector<VirtualRegister> _params;
-        std::vector<VirtualRegister> _frame;
-        std::vector<VirtualRegister> _regs;
+        RegisterID _next_vreg{VREG_START};
+
+        std::vector<RegSlot> _params;
+        std::vector<RegSlot> _frame;
+        std::vector<RegSlot> _regs;
 
         std::vector<BasicBlock> _bblocks;
     };

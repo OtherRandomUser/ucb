@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include <ucb/core/ir/ilist.hpp>
 #include <ucb/core/ir/type.hpp>
 
 namespace ucb
@@ -11,7 +10,12 @@ namespace ucb
     class Procedure;
     class Instruction;
 
-    class VirtualRegister : public IListNode<VirtualRegister>
+    using RegisterID = unsigned int;
+
+    constexpr RegisterID VREG_START = 100;
+    constexpr RegisterID NO_REG = 0;
+
+    class VirtualRegister
     {
     public:
         friend Procedure;

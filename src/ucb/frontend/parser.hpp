@@ -55,7 +55,7 @@ namespace ucb::frontend
         bool _parse_cmp(std::string def_id);
 
         bool _parse_ty(TypeID& ty);
-        bool _parse_opnd(Operand **op, TypeID ty, bool is_def);
+        bool _parse_opnd(Operand& op, TypeID ty, bool is_def);
 
         Token _bump();
     };

@@ -12,8 +12,8 @@ namespace ucb
         _ty{TypeID::T_VOID},
         _kind{OperandKind::OK_POISON},
         _is_def{false},
-        _reg{nullptr},
-        _bblock{nullptr},
+        _reg{NO_REG},
+        _bblock_idx{-1},
         _integer_val{0},
         _unsigned_val{0},
         _float_val{0}
@@ -21,23 +21,25 @@ namespace ucb
         assert(parent && "parent is null");
     }
 
-    Operand::Operand(Procedure *parent, VirtualRegister *reg, bool is_def):
+    Operand::Operand(Procedure *parent, RegisterID reg, bool is_def):
         Operand(parent)
     {
         assert(reg && "Virtual register is null");
         _kind = OperandKind::OK_VIRTUAL_REG;
-        _ty = reg->ty();
+        auto r = _parent->get_register(reg);
+        assert(r && "Virtual register not found");
+        _ty = r->ty();
         _is_def = is_def;
         _reg = reg;
     }
 
-    Operand::Operand(Procedure *parent, BasicBlock *bblock):
+    Operand::Operand(Procedure *parent, int bblock_idx):
         Operand(parent)
     {
-        assert(bblock && "Basic Block is null");
+        assert(bblock_idx != -1 && "Basic Block is null");
         _kind = OperandKind::OK_BASIC_BLOCK;
         _ty = TypeID::T_STATIC_ADDRESS;
-        _bblock = bblock;
+        _bblock_idx = bblock_idx;
     }
 
     Operand::Operand(Procedure *parent, long int val, TypeID ty):
@@ -79,8 +81,12 @@ namespace ucb
                 break;
 
             case OperandKind::OK_VIRTUAL_REG:
-                out << _reg->id();
+            {
+                auto r = _parent->get_register(_reg);
+                assert(r);
+                out << r->id();
                 break;
+            }
 
             case OperandKind::OK_INTEGER_CONST:
                 out << _integer_val;
@@ -95,12 +101,22 @@ namespace ucb
                 break;
 
             case OperandKind::OK_BASIC_BLOCK:
-                out << _bblock->id();
+            {
+                auto bblock = _parent->get_bblock(_bblock_idx);
+                assert(bblock);
+                out << "%" << bblock->id();
                 break;
+            }
 
             default:
                 assert(false && "unreachable");
         }
+    }
+
+    void Instruction::add_operand(Operand opnd)
+    {
+        assert(_parent->parent() == opnd.parent());
+        _opnds.push_back(std::move(opnd));
     }
 
     void Instruction::dump(std::ostream& out)
@@ -174,7 +190,7 @@ namespace ucb
                 break;
 
             case InstrOpcode::OP_CMP:
-                out << "cmp\t";
+                out << "cmp " << _id << "\t";
                 break;
 
             case InstrOpcode::OP_LOAD:
@@ -186,7 +202,7 @@ namespace ucb
                 break;
 
             case InstrOpcode::OP_CALL:
-                out << "call\t";
+                out << "call @" << _id << "\t";
                 break;
 
             default:
@@ -199,13 +215,13 @@ namespace ucb
 
     void Instruction::_dump_opnds(std::ostream& out)
     {
-        auto it = begin();
+        auto it = _opnds.begin();
         auto j = "";
 
-        while (it != end())
+        while (it != _opnds.end())
         {
             out << j;
-            j = " ";
+            j = ", ";
             it->dump(out);
             it++;
         }

@@ -6,11 +6,11 @@ namespace ucb
     {
         out << _id << ":\n";
 
-        auto it = begin();
+        auto it = _insts.begin();
 
-        while (it != end())
+        while (it != _insts.end())
         {
-            (*it).dump(out);
+            it->dump(out);
             it++;
         }
 

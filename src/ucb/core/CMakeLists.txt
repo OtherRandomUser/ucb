@@ -2,8 +2,6 @@ target_sources(ucb-core
     PUBLIC
         ir/basic-block.hpp
         ir/compile-unit.hpp
-        ir/dilist.hpp
-        ir/ilist.hpp
         ir/instruction.hpp
         ir/procedure.hpp
         ir/type.hpp

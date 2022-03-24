@@ -92,7 +92,7 @@ namespace ucb
                     break;
 
                 case TypeID::T_STATIC_ADDRESS:
-                    out << "";
+                    out << "addr";
                     break;
 
                 case TypeID::T_BOOL:

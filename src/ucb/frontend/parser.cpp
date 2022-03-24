@@ -41,8 +41,6 @@ namespace ucb::frontend
             }
         }
 
-        std::cout << "batata";
-
         return true;
     }
 
@@ -102,7 +100,8 @@ namespace ucb::frontend
         }
 
         _proc = _compile_unit->add_procedure(sig, id);
-        _bblock = _proc->add_bblock("entry");
+        auto idx = _proc->add_bblock("entry");
+        _bblock = _proc->get_bblock(idx);
 
         auto lb = _cur;
         CHECK_TK(lb, lb.ty == '{', "'{'");
@@ -148,6 +147,7 @@ namespace ucb::frontend
             }
 
             CHECK_TK(c, c.ty == ',', "')' or ','");
+            _bump();
         }
 
         _bump();
@@ -191,12 +191,14 @@ namespace ucb::frontend
         auto p = _bump();
         CHECK_TK(p, p.ty == ':', "':'");
 
-        _bblock = _proc->find_bblock(std::string(id.lexema));
+        auto idx = _proc->find_bblock(std::string(id.lexema));
 
-        if (_bblock == nullptr)
+        if (idx == -1)
         {
-            _bblock = _proc->add_bblock(std::string(id.lexema));
+            idx = _proc->add_bblock(std::string(id.lexema));
         }
+
+        _bblock = _proc->get_bblock(idx);
 
         if (_bblock == nullptr)
         {
@@ -262,8 +264,8 @@ namespace ucb::frontend
             return false;
         }
 
-        Operand *val = nullptr;
-        if (!_parse_opnd(&val, ty, false))
+        Operand val;
+        if (!_parse_opnd(val, ty, false))
         {
             return false;
         }
@@ -274,15 +276,15 @@ namespace ucb::frontend
             return false;
         }
 
-        Operand *ref = nullptr;
-        if (!_parse_opnd(&ref, ty_ref, false))
+        Operand ref;
+        if (!_parse_opnd(ref, ty_ref, false))
         {
             return false;
         }
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_STORE, ty);
-        inst.append(val);
-        inst.append(ref);
+        inst.add_operand(val);
+        inst.add_operand(ref);
 
         return true;
     }
@@ -292,14 +294,14 @@ namespace ucb::frontend
         CHECK_TK(_cur, _cur.ty == TokenType::OP_BR, "br");
         _bump();
 
-        Operand *tgt;
-        if (!_parse_opnd(&tgt, TypeID::T_STATIC_ADDRESS, false))
+        Operand tgt;
+        if (!_parse_opnd(tgt, TypeID::T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_BR, TypeID::T_STATIC_ADDRESS);
-        inst.append(tgt);
+        inst.add_operand(tgt);
 
         return true;
     }
@@ -313,28 +315,28 @@ namespace ucb::frontend
 
         _bump();
 
-        Operand *cnd;
-        if (!_parse_opnd(&cnd, TypeID::T_BOOL, false))
+        Operand cnd;
+        if (!_parse_opnd(cnd, TypeID::T_BOOL, true))
         {
             return false;
         }
 
-        Operand *lt;
-        if (!_parse_opnd(&lt, TypeID::T_STATIC_ADDRESS, false))
+        Operand lt;
+        if (!_parse_opnd(lt, TypeID::T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
-        Operand *lf;
-        if (!_parse_opnd(&lf, TypeID::T_STATIC_ADDRESS, false))
+        Operand lf;
+        if (!_parse_opnd(lf, TypeID::T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_BRC, TypeID::T_STATIC_ADDRESS);
-        inst.append(cnd);
-        inst.append(lt);
-        inst.append(lf);
+        inst.add_operand(cnd);
+        inst.add_operand(lt);
+        inst.add_operand(lf);
 
         return true;
     }
@@ -354,13 +356,13 @@ namespace ucb::frontend
 
         if (ty != TypeID::T_VOID)
         {
-            Operand *opnd;
-            if (!_parse_opnd(&opnd, ty, false))
+            Operand opnd;
+            if (!_parse_opnd(opnd, ty, false))
             {
                 return false;
             }
 
-            inst.append(opnd);
+            inst.add_operand(opnd);
         }
 
         return true;
@@ -382,21 +384,21 @@ namespace ucb::frontend
         
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
             _proc->add_vreg(def_id, ty);
         }
 
         auto def = _proc->operand_from_vreg(def_id, true);
 
-        Operand *lhs = nullptr;
-        if (!_parse_opnd(&lhs, ty, false))
+        Operand lhs;
+        if (!_parse_opnd(lhs, ty, false))
         {
             return false;
         }
 
-        Operand *rhs = nullptr;
-        if (!_parse_opnd(&rhs, ty, false))
+        Operand rhs;
+        if (!_parse_opnd(rhs, ty, false))
         {
             return false;
         }
@@ -451,9 +453,9 @@ namespace ucb::frontend
         }
 
         auto& inst = _bblock->append_instr(op, ty);
-        inst.append(def);
-        inst.append(lhs);
-        inst.append(rhs);
+        inst.add_operand(def);
+        inst.add_operand(lhs);
+        inst.add_operand(rhs);
 
         return true;
     }
@@ -473,15 +475,15 @@ namespace ucb::frontend
 
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
             _proc->add_vreg(def_id, ty);
         }
 
         auto def = _proc->operand_from_vreg(def_id, true);
 
-        Operand *opnd = nullptr;
-        if (!_parse_opnd(&opnd, ty, false))
+        Operand opnd;
+        if (!_parse_opnd(opnd, ty, false))
         {
             return false;
         }
@@ -491,8 +493,8 @@ namespace ucb::frontend
             : InstrOpcode::OP_CP;
 
         auto &inst = _bblock->append_instr(opc, ty);
-        inst.append(def);
-        inst.append(opnd);
+        inst.add_operand(def);
+        inst.add_operand(opnd);
 
         return true;
     }
@@ -511,15 +513,15 @@ namespace ucb::frontend
 
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
             _proc->add_vreg(def_id, opnd_ty);
         }
 
         auto def = _proc->operand_from_vreg(def_id, true);
 
-        Operand * opnd = nullptr;
-        if (!_parse_opnd(&opnd, opnd_ty, false))
+        Operand opnd;
+        if (!_parse_opnd(opnd, opnd_ty, false))
         {
             return false;
         }
@@ -531,8 +533,8 @@ namespace ucb::frontend
         }
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_CAST, ty);
-        inst.append(def);
-        inst.append(opnd);
+        inst.add_operand(def);
+        inst.add_operand(opnd);
 
         return true;
     }
@@ -568,7 +570,7 @@ namespace ucb::frontend
 
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
             _proc->add_vreg(def_id, ty);
         }
@@ -581,15 +583,15 @@ namespace ucb::frontend
             return false;
         }
 
-        Operand *opnd;
-        if (!_parse_opnd(&opnd, ptr_ty, false))
+        Operand opnd;
+        if (!_parse_opnd(opnd, ptr_ty, false))
         {
             return false;
         }
 
         auto&inst = _bblock->append_instr(InstrOpcode::OP_LOAD, ty);
-        inst.append(def);
-        inst.append(opnd);
+        inst.add_operand(def);
+        inst.add_operand(opnd);
 
         return true;
     }
@@ -608,7 +610,7 @@ namespace ucb::frontend
 
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
             _proc->add_vreg(def_id, ty);
         }
@@ -620,7 +622,7 @@ namespace ucb::frontend
         auto lp = _bump();
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_CALL, ty, std::string(id.lexema));
-        inst.append(def);
+        inst.add_operand(def);
 
         CHECK_TK(lp, lp.ty == '(', "'('");
         _bump();
@@ -628,13 +630,13 @@ namespace ucb::frontend
         while (true)
         {
             auto opnd_ty = TypeID::T_ERROR;
-            Operand *opnd = nullptr;
-            if (!_parse_opnd(&opnd, opnd_ty, false))
+            Operand opnd;
+            if (!_parse_opnd(opnd, opnd_ty, false))
             {
                 return false;
             }
 
-            inst.append(opnd);
+            inst.add_operand(opnd);
 
             auto c = _cur;
 
@@ -669,30 +671,30 @@ namespace ucb::frontend
 
         auto reg = _proc->find_vreg(def_id);
 
-        if (reg == nullptr)
+        if (reg == NO_REG)
         {
-            _proc->add_vreg(def_id, ty);
+            _proc->add_vreg(def_id, TypeID::T_BOOL);
         }
 
         auto def = _proc->operand_from_vreg(def_id, true);
 
-        Operand *lhs = nullptr;
-        if (!_parse_opnd(&lhs, ty, false))
+        Operand lhs;
+        if (!_parse_opnd(lhs, ty, false))
         {
             return false;
         }
 
-        Operand *rhs = nullptr;
-        if (!_parse_opnd(&rhs, ty, false))
+        Operand rhs;
+        if (!_parse_opnd(rhs, ty, false))
         {
             return false;
         }
 
         // TODO the mode should be separated, but i cant be bothered
         auto& inst = _bblock->append_instr(InstrOpcode::OP_CMP, ty, std::string(mode.lexema));
-        inst.append(def);
-        inst.append(lhs);
-        inst.append(rhs);
+        inst.add_operand(def);
+        inst.add_operand(lhs);
+        inst.add_operand(rhs);
 
         return true;
     }
@@ -793,9 +795,9 @@ namespace ucb::frontend
         }
     }
 
-    bool Parser::_parse_opnd(Operand **op, TypeID ty, bool is_def)
+    bool Parser::_parse_opnd(Operand& op, TypeID ty, bool is_def)
     {
-        *op = nullptr;
+        op = Operand();
 
         if (_cur.ty == TokenType::ID_LOCAL)
         {
@@ -803,18 +805,18 @@ namespace ucb::frontend
             {
                 auto lex = std::string(_cur.lexema);
 
-                if (!_proc->find_bblock(lex))
+                if (_proc->find_bblock(lex) == -1)
                 {
                     _proc->add_bblock(lex);
                 }
 
-                *op = _proc->operand_from_bblock(lex);
+                op = _proc->operand_from_bblock(lex);
             }
             else
             {
-                *op = _proc->operand_from_vreg(std::string(_cur.lexema), is_def);
+                op = _proc->operand_from_vreg(std::string(_cur.lexema), is_def);
 
-                if (*op == nullptr)
+                if (op == Operand())
                 {
                     ERROR("local identifier \"{}\" not found", _cur, _cur.lexema);
                 }
@@ -829,12 +831,12 @@ namespace ucb::frontend
             if (ty_is_signed_int(ty))
             {
                 auto val = std::stol(std::string(_cur.lexema));
-                *op = new Operand(_proc, val, ty);
+                op = Operand(_proc, val, ty);
             }
             else if (ty_is_unsigned_int(ty))
             {
                 auto val = std::stoul(std::string(_cur.lexema));
-                *op = new Operand(_proc, val, ty);
+                op = Operand(_proc, val, ty);
             }
             else
             {
@@ -853,7 +855,7 @@ namespace ucb::frontend
             }
 
             auto val = std::stod(std::string(_cur.lexema));
-            *op = new Operand(_proc, val, ty);
+            op = Operand(_proc, val, ty);
 
             _bump();
             return true;

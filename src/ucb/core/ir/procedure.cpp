@@ -4,7 +4,7 @@
 
 namespace ucb
 {
-    BasicBlock* Procedure::find_bblock(const std::string& id)
+    int Procedure::find_bblock(const std::string& id)
     {
         auto it = std::find_if(_bblocks.begin(), _bblocks.end(), [&](auto& b) {
             return b.id() == id;
@@ -12,118 +12,158 @@ namespace ucb
 
         if (it != _bblocks.end())
         {
-            return &*it;
+            return std::distance(_bblocks.begin(), it);
         }
 
-        return nullptr;
+        return -1;
     }
 
-    BasicBlock* Procedure::add_bblock(std::string id)
+    BasicBlock* Procedure::get_bblock(int idx)
     {
-        auto ptr = find_bblock(id);
+        assert(idx < _bblocks.size());
+        return &_bblocks[idx];
+    }
 
-        if (ptr != nullptr)
+    int Procedure::add_bblock(std::string id)
+    {
+        auto idx = find_bblock(id);
+
+        if (idx != -1)
         {
-            return nullptr;
+            return -1;
         }
         else
         {
             _bblocks.emplace_back(this, std::move(id));
-            return &_bblocks.back();
+            return _bblocks.size() - 1;
         }
     }
 
-    Operand* Procedure::operand_from_bblock(const std::string& id)
+    Operand Procedure::operand_from_bblock(const std::string& id)
     {
-        auto ptr = find_bblock(id);
+        auto idx = find_bblock(id);
 
-        if (ptr == nullptr)
+        if (idx == -1)
         {
             std::cerr << "basic block \"" << id << "\" not found\n";
-            return nullptr;
+            return Operand();
         }
         else
         {
-            return new Operand(this, ptr);
+            return Operand(this, idx);
         }
     }
 
-    VirtualRegister* Procedure::find_vreg(const std::string& id)
+    RegisterID Procedure::find_vreg(const std::string& id)
     {
         auto it = std::find_if(_regs.begin(), _regs.end(), [&](auto& r) {
-            return r.id() == id;
+            return r.second.id() == id;
         });
 
         if (it != _regs.end())
         {
-            return &*it;
+            return it->first;
         }
 
         it = std::find_if(_frame.begin(), _frame.end(), [&](auto& r) {
-            return r.id() == id;
+            return r.second.id() == id;
         });
 
         if (it != _frame.end())
         {
-            return &*it;
+            return it->first;
         }
 
         it = std::find_if(_params.begin(), _params.end(), [&](auto& r) {
-            return r.id() == id;
+            return r.second.id() == id;
         });
 
         if (it != _params.end())
         {
-            return &*it;
+            return it->first;
+        }
+
+        return NO_REG;
+    }
+
+    const VirtualRegister* Procedure::get_register(RegisterID id) const
+    {
+        auto it = std::find_if(_regs.begin(), _regs.end(), [&](auto& r) {
+            return r.first == id;
+        });
+
+        if (it != _regs.end())
+        {
+            return &it->second;
+        }
+
+        it = std::find_if(_frame.begin(), _frame.end(), [&](auto& r) {
+            return r.first == id;
+        });
+
+        if (it != _frame.end())
+        {
+            return &it->second;
+        }
+
+        it = std::find_if(_params.begin(), _params.end(), [&](auto& r) {
+            return r.first == id;
+        });
+
+        if (it != _params.end())
+        {
+            return &it->second;
         }
 
         return nullptr;
     }
 
-    VirtualRegister *Procedure::add_frame_slot(std::string id, TypeID ty)
+    RegisterID Procedure::add_frame_slot(std::string id, TypeID ty)
     {
-        auto ptr = find_vreg(id);
+        auto rid = find_vreg(id);
 
-        if (ptr != nullptr)
+        if (rid != NO_REG)
         {
             std::cerr << "virtual register \"" << id << "\" already exists\n";
-            return nullptr;
+            return NO_REG;
         }
         else
         {
-            _frame.emplace_back(this, std::move(id), ty);
-            return &_frame.back();
+            rid = _next_vreg++;
+            _frame.emplace_back(rid, VirtualRegister(this, std::move(id), ty));
+            return rid;
         }
     }
 
-    VirtualRegister *Procedure::add_vreg(std::string id, TypeID ty)
+    RegisterID Procedure::add_vreg(std::string id, TypeID ty)
     {
-        auto ptr = find_vreg(id);
+        auto rid = find_vreg(id);
 
-        if (ptr != nullptr)
+        if (rid != NO_REG)
         {
             std::cerr << "virtual register \"" << id << "\" already exists\n";
-            return nullptr;
+            return NO_REG;
         }
         else
         {
-            _regs.emplace_back(this, std::move(id), ty);
-            return &_regs.back();
+            rid = _next_vreg++;
+            _regs.emplace_back(rid, VirtualRegister(this, std::move(id), ty));
+            return rid;
         }
     }
 
-    Operand* Procedure::operand_from_vreg(const std::string& id, bool is_def)
+    Operand Procedure::operand_from_vreg(const std::string& id, bool is_def)
     {
-        auto ptr = find_vreg(id);
+        auto rid = find_vreg(id);
 
-        if (ptr == nullptr)
+        if (rid == NO_REG)
         {
             std::cerr << "virtual register \"" << id << "\" not found\n";
-            return nullptr;
+            return Operand();
         }
         else
         {
-            return new Operand(this, ptr, is_def);
+            return Operand(this, rid, is_def);
         }
     }
 
@@ -135,8 +175,9 @@ namespace ucb
 
         for (auto& arg: _signature.args())
         {
+            out << junc;
             _parent->dump_ty(out, arg.second);
-            out << " " << arg.first << junc;
+            out << arg.first;
             junc = ", ";
         }
 

@@ -1,16 +1,15 @@
 #pragma once
 
+#include <cassert>
+#include <list>
 #include <ostream>
 
-#include <ucb/core/ir/dilist.hpp>
 #include <ucb/core/ir/instruction.hpp>
 #include <ucb/core/ir/procedure.hpp>
 
 namespace ucb
 {
-    class BasicBlock :
-        public DIList<Instruction>,
-        public IListNode<BasicBlock>
+    class BasicBlock
     {
     public:
         BasicBlock(Procedure *parent, std::string id):
@@ -20,20 +19,17 @@ namespace ucb
             assert(_parent);
         }
 
+        const Procedure* parent() const { return _parent; }
         const std::string& id() const { return _id; }
 
         Instruction& append_instr(InstrOpcode op, TypeID ty)
         {
-            auto instr = new Instruction(this, op, ty);
-            append(instr);
-            return *instr;
+            return _insts.emplace_back(this, op, ty);
         }
 
         Instruction& append_instr(InstrOpcode op, TypeID ty, std::string id)
         {
-            auto instr = new Instruction(this, op, ty, std::move(id));
-            append(instr);
-            return *instr;
+            return _insts.emplace_back(this, op, ty, std::move(id));
         }
 
         void dump(std::ostream& out);
@@ -42,5 +38,6 @@ namespace ucb
     private:
         Procedure *_parent;
         std::string _id;
+        std::list<Instruction> _insts;
     };
 }
