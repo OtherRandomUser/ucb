@@ -22,3 +22,5 @@ After all the dependencies are installed, execute the following commands:
 ```
 $ mkdir build && cd build
 $ cmake .. -G Ninja -D CMAKE_BUILD_TYPE=Debug -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_C_COMPILER=clang -D CMAKE_EXPORT_COMPILE_COMMANDS=On
+$ ninja
+```
