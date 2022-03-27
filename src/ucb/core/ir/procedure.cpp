@@ -183,6 +183,20 @@ namespace ucb
 
         out << ")\n{\n";
 
+        if (_frame.size() > 0)
+        {
+            out << "frame slots:\n";
+
+            for (auto& reg: _frame)
+            {
+                out << "\t";
+                _parent->dump_ty(out, reg.second.ty());
+                out << " " << reg.second.id() << "\n";
+            }
+
+            out << "\n";
+        }
+
         for (auto& bblock: _bblocks)
         {
             bblock.dump(out);
