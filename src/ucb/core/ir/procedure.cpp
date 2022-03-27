@@ -177,7 +177,7 @@ namespace ucb
         {
             out << junc;
             _parent->dump_ty(out, arg.second);
-            out << arg.first;
+            out << " " << arg.first;
             junc = ", ";
         }
 
