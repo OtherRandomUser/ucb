@@ -1,5 +1,7 @@
 target_sources(ucb-core
     PUBLIC
+        pass-manager.hpp
+        target-machine.hpp
         ir/basic-block.hpp
         ir/compile-unit.hpp
         ir/instruction.hpp
@@ -7,6 +9,8 @@ target_sources(ucb-core
         ir/type.hpp
         ir/value.hpp
     PRIVATE
+        pass-manager.cpp
+        target-machine.cpp
         ir/basic-block.cpp
         ir/compile-unit.cpp
         ir/instruction.cpp

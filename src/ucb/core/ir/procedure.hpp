@@ -40,6 +40,11 @@ namespace ucb
             return *_bblocks.begin();
         }
 
+        const std::vector<BasicBlock>& bblocks() const
+        {
+            return _bblocks;
+        }
+
         int find_bblock(const std::string& id);
         BasicBlock* get_bblock(int idx);
         int add_bblock(std::string id);

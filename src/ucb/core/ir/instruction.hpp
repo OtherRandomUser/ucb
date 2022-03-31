@@ -80,6 +80,7 @@ namespace ucb
 
     enum InstrOpcode
     {
+        OP_NONE = 0,
         OP_ADD,
         OP_SUB,
         OP_MUL,

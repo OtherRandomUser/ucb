@@ -17,6 +17,11 @@ namespace ucb
         Procedure* add_procedure(ProcSignature sig, std::string id);
         Procedure* get_procedure(const std::string& id);
 
+        std::vector<Procedure>& procs()
+        {
+            return _procs;
+        }
+
         TypeID get_ptr_ty(TypeID sub)
         {
             CompositeType ty(

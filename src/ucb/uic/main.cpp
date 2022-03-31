@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <ucb/core/pass-manager.hpp>
 #include <ucb/frontend/lexer.hpp>
 #include <ucb/frontend/parser.hpp>
 
@@ -10,6 +11,13 @@
 using namespace ucb;
 
 namespace po = boost::program_options;
+
+std::unique_ptr<PassManager> make_pass_manager()
+{
+    std::vector<std::unique_ptr<Pass>> passes;
+    auto target = std::make_unique<TargetMachine>(TargetArch::ARCH_X64);
+    return std::make_unique<PassManager>(std::move(passes), std::move(target));
+}
 
 int main(int argc, char **argv)
 {
@@ -50,7 +58,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    context->dump(std::cout);
+    auto pm = make_pass_manager();
+    pm->apply(context);
 
     return EXIT_SUCCESS;
 }
