@@ -13,5 +13,6 @@ namespace  ucb
         }
 
         _target->compile(unit);
+        unit->dump(std::cout);
     }
 }
