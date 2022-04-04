@@ -9,7 +9,17 @@ namespace ucb
 {
     class Procedure;
     class Instruction;
+/*
+    struct RegisterID
+    {
+        std::uint64_t val : 54;
+        std::uint64_t size : 10;
+    };
 
+    constexpr RegisterID NO_REG = { 0, 0 };
+    constexpr std::uint64_t PREG_START = 1;
+    constexpr std::uint64_t VREG_START = 100;
+*/
     using RegisterID = unsigned int;
 
     constexpr RegisterID VREG_START = 100;

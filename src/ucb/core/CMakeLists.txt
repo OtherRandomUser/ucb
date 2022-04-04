@@ -8,13 +8,17 @@ target_sources(ucb-core
         ir/procedure.hpp
         ir/type.hpp
         ir/value.hpp
+        isel/dp-isel.hpp
+        isel/isel.hpp
     PRIVATE
         pass-manager.cpp
         target-machine.cpp
         ir/basic-block.cpp
         ir/compile-unit.cpp
         ir/instruction.cpp
+        ir/machine-instruction.hpp
         ir/procedure.cpp
+        isel/dp-isel.cpp
 )
 
 target_include_directories(ucb-core

@@ -4,7 +4,7 @@
 
 namespace ucb
 {
-    Procedure *CompileUnit::add_procedure(ProcSignature sig, std::string id)
+    std::shared_ptr<Procedure> CompileUnit::add_procedure(ProcSignature sig, std::string id)
     {
         if (get_procedure(id) != nullptr)
         {
@@ -12,21 +12,21 @@ namespace ucb
             abort();
         }
 
-        _procs.emplace_back(this, std::move(id), std::move(sig));
-        return &_procs.back();
+        _procs.push_back(std::make_shared<Procedure>(this, std::move(id), std::move(sig)));
+        return _procs.back();
     }
 
 
-    Procedure* CompileUnit::get_procedure(const std::string& id)
+    std::shared_ptr<Procedure> CompileUnit::get_procedure(const std::string& id)
     {
         auto it = std::find_if(_procs.begin(), _procs.end(), [&](auto& p)
         {
-            return p.id() == id;
+            return p->id() == id;
         });
 
         if (it != _procs.end())
         {
-            return &(*it);
+            return *it;
         }
         else
         {
@@ -42,7 +42,7 @@ namespace ucb
         {
             out << junc;
             junc = "\n";
-            proc.dump(out);
+            proc->dump(out);
         }
     }
 

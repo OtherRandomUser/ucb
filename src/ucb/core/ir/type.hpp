@@ -8,6 +8,10 @@ namespace ucb
 {
     class CompileUnit;
 
+    // TODO find a better place for this
+    using MachineOpc = unsigned int;
+    constexpr MachineOpc MOP_NONE = 0;
+
     enum TypeID : int
     {
         T_ERROR = -10,

@@ -8,7 +8,7 @@ namespace ucb
     class Pass
     {
     public:
-        virtual void apply(Procedure& proc) = 0;
+        virtual void apply(std::shared_ptr<Procedure> proc) = 0;
 
         virtual ~Pass() = default;
     };

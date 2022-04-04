@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <ucb/core/pass-manager.hpp>
+#include <ucb/core/isel/dp-isel.hpp>
 #include <ucb/frontend/lexer.hpp>
 #include <ucb/frontend/parser.hpp>
 
@@ -15,7 +16,8 @@ namespace po = boost::program_options;
 std::unique_ptr<PassManager> make_pass_manager()
 {
     std::vector<std::unique_ptr<Pass>> passes;
-    auto target = std::make_unique<TargetMachine>(TargetArch::ARCH_X64);
+    auto isel = std::make_unique<DynamicISel>();
+    auto target = std::make_unique<TargetMachine>(TargetArch::ARCH_X64, std::move(isel));
     return std::make_unique<PassManager>(std::move(passes), std::move(target));
 }
 

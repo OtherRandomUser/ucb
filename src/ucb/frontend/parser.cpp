@@ -831,12 +831,12 @@ namespace ucb::frontend
             if (ty_is_signed_int(ty))
             {
                 auto val = std::stol(std::string(_cur.lexema));
-                op = Operand(_proc, val, ty);
+                op = Operand(_proc.get(), val, ty);
             }
             else if (ty_is_unsigned_int(ty))
             {
                 auto val = std::stoul(std::string(_cur.lexema));
-                op = Operand(_proc, val, ty);
+                op = Operand(_proc.get(), val, ty);
             }
             else
             {
@@ -855,7 +855,7 @@ namespace ucb::frontend
             }
 
             auto val = std::stod(std::string(_cur.lexema));
-            op = Operand(_proc, val, ty);
+            op = Operand(_proc.get(), val, ty);
 
             _bump();
             return true;

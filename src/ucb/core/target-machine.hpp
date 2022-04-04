@@ -2,6 +2,7 @@
 
 #include <ostream>
 
+#include <ucb/core/isel/isel.hpp>
 #include <ucb/core/ir/compile-unit.hpp>
 
 namespace ucb
@@ -14,8 +15,9 @@ namespace ucb
     class TargetMachine
     {
     public:
-        TargetMachine(TargetArch arch):
-            _arch{arch}
+        TargetMachine(TargetArch arch, std::unique_ptr<ISel> isel):
+            _arch{arch},
+            _isel(std::move(isel))
         {
         }
 
@@ -23,5 +25,6 @@ namespace ucb
 
     private:
         TargetArch _arch;
+        std::unique_ptr<ISel> _isel;
     };
 }

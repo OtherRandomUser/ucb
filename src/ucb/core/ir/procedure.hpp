@@ -40,7 +40,7 @@ namespace ucb
             return *_bblocks.begin();
         }
 
-        const std::vector<BasicBlock>& bblocks() const
+        std::vector<BasicBlock>& bblocks()
         {
             return _bblocks;
         }

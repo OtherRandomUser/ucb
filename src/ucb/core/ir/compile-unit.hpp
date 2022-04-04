@@ -14,10 +14,10 @@ namespace ucb
     class CompileUnit
     {
     public:
-        Procedure* add_procedure(ProcSignature sig, std::string id);
-        Procedure* get_procedure(const std::string& id);
+        std::shared_ptr<Procedure> add_procedure(ProcSignature sig, std::string id);
+        std::shared_ptr<Procedure> get_procedure(const std::string& id);
 
-        std::vector<Procedure>& procs()
+        std::vector<std::shared_ptr<Procedure>>& procs()
         {
             return _procs;
         }
@@ -80,6 +80,6 @@ namespace ucb
     private:
         int _next_ty_id{COMP_TY_START};
         std::vector<std::pair<TypeID, CompositeType>> _comp_tys;
-        std::vector<Procedure> _procs;
+        std::vector<std::shared_ptr<Procedure>> _procs;
     };
 }
