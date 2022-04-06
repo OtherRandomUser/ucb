@@ -18,6 +18,7 @@ namespace ucb
         DDK_REG,
         DDK_MEM,
         DDK_IMM,
+        DDK_ADDR,
         DDK_ENTRY,
         DDK_EXIT,
     };
@@ -27,18 +28,24 @@ namespace ucb
     public:
         friend class Dag;
 
-        DagNode(int og_order, InstrOpcode opc, DagDefKind kind, TypeID ty):
+        DagNode(int og_order, InstrOpcode opc, DagDefKind kind, TypeID ty, std::string id):
             _og_order{og_order},
             _opc{opc},
             _kind{kind},
-            _ty{ty}
+            _ty{ty},
+            _id(std::move(id))
         {
         }
 
         bool is_leaf() const { return _args.empty(); }
         DagDefKind kind() const { return _kind; }
+        InstrOpcode opc() const { return _opc; }
         TypeID ty() const { return _ty; }
         RegisterID reg() const { return _reg; }
+        std::uint64_t imm_val() const { return _imm_val; }
+        const std::string& id() const { return _id; }
+
+        std::vector<std::shared_ptr<DagNode>>& args() { return _args; }
 
         DagNode& add_arg(std::shared_ptr<DagNode> arg)
         {
@@ -60,6 +67,7 @@ namespace ucb
         InstrOpcode _opc;
         DagDefKind _kind;
         TypeID _ty;
+        std::string _id;
 
         MachineOpc _mopc{MOP_NONE};
         RegisterID _reg{NO_REG};
@@ -107,7 +115,7 @@ namespace ucb
         template<typename T>
         std::shared_ptr<DagNode> get_imm(T val, TypeID ty)
         {
-            auto n = std::make_shared<DagNode>(-1, InstrOpcode::OP_NONE, DagDefKind::DDK_IMM, ty);
+            auto n = std::make_shared<DagNode>(-1, InstrOpcode::OP_NONE, DagDefKind::DDK_IMM, ty, "");
             n->_imm_val = std::bit_cast<std::uint64_t>(val);
             return n;
         }

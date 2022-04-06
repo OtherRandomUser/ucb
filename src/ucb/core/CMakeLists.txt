@@ -11,6 +11,7 @@ target_sources(ucb-core
         isel/dag.hpp
         isel/dp-isel.hpp
         isel/isel.hpp
+        isel/pat.hpp
     PRIVATE
         pass-manager.cpp
         target-machine.cpp
@@ -21,6 +22,7 @@ target_sources(ucb-core
         ir/procedure.cpp
         isel/dag.cpp
         isel/dp-isel.cpp
+        isel/pat.cpp
 )
 
 target_include_directories(ucb-core

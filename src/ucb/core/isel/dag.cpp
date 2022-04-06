@@ -37,6 +37,10 @@ namespace ucb
             // TODO
             break;
 
+        case DagDefKind::DDK_ADDR:
+            // TODO
+            break;
+
         case DagDefKind::DDK_ENTRY:
             assert(false && "unreachable");
 

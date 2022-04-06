@@ -4,20 +4,21 @@
 #include <string>
 #include <vector>
 
+#include <ucb/core/ir/type.hpp>
+
 namespace ucb
 {
     struct MachineOperand
     {
         enum Kind
         {
-            IImm,
-            UImm,
-            FImm,
+            Imm,
             Register,
             FrameSlot,
             BBlockAddress
         } kind;
 
+        TypeID ty;
         std::uint64_t val;
     };
 

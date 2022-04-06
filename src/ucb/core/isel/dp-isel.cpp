@@ -34,7 +34,7 @@ namespace ucb
                 dk = DagDefKind::DDK_MEM;
             }
 
-            auto n = std::make_shared<DagNode>(order++, inst.op(), dk, inst.ty());
+            auto n = std::make_shared<DagNode>(order++, inst.op(), dk, inst.ty(), inst.id());
 
             for (auto& op: inst.opnds())
             {
