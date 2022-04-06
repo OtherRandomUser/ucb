@@ -69,7 +69,7 @@ namespace ucb
         explicit Operand(Procedure *parent);
 
         Procedure *_parent{nullptr};
-        TypeID _ty{TypeID::T_ERROR};
+        TypeID _ty{T_ERROR};
         OperandKind _kind{OperandKind::OK_POISON};
 
         bool _is_def{false};

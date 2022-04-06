@@ -21,7 +21,8 @@ namespace ucb
             _bblocks.reserve(100);
             for (auto& arg: _signature.args())
             {
-                _params.emplace_back(_next_vreg++, VirtualRegister{this, arg.first, arg.second});
+                RegisterID rid = { _next_vreg++, arg.second.size };
+                _params.emplace_back(rid, VirtualRegister{this, arg.first, arg.second});
             }
         }
 
@@ -65,7 +66,7 @@ namespace ucb
         ProcSignature _signature;
         std::string _id;
 
-        RegisterID _next_vreg{VREG_START};
+        std::uint64_t _next_vreg{VREG_START};
 
         std::vector<RegSlot> _params;
         std::vector<RegSlot> _frame;

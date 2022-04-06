@@ -48,7 +48,7 @@ namespace ucb
 
     void CompileUnit::dump_ty(std::ostream& out, TypeID ty)
     {
-        if (ty >= COMP_TY_START)
+        if (ty.val >= COMP_TY_START)
         {
             auto it = std::find_if(_comp_tys.begin(), _comp_tys.end(), [&](auto p)
             {
@@ -81,62 +81,34 @@ namespace ucb
         }
         else
         {
-            switch (ty)
+            switch (ty.val)
             {
-                case TypeID::T_ERROR:
+                case T_ERROR.val:
                     out << "ERROR";
                     break;
 
-                case TypeID::T_VOID:
+                case T_VOID.val:
                     out << "void";
                     break;
 
-                case TypeID::T_STATIC_ADDRESS:
+                case T_STATIC_ADDRESS.val:
                     out << "addr";
                     break;
 
-                case TypeID::T_BOOL:
+                case T_BOOL.val:
                     out << "bool";
                     break;
 
-                case TypeID::T_U8:
-                    out << "u8";
+                case T_U8.val:
+                    out << "u" << ty.size;
                     break;
 
-                case TypeID::T_U16:
-                    out << "u16";
+                case T_I8.val:
+                    out << "i" << ty.size;
                     break;
 
-                case TypeID::T_U32:
-                    out << "u32";
-                    break;
-
-                case TypeID::T_U64:
-                    out << "u64";
-                    break;
-
-                case TypeID::T_I8:
-                    out << "i8";
-                    break;
-
-                case TypeID::T_I16:
-                    out << "i16";
-                    break;
-
-                case TypeID::T_I32:
-                    out << "i32";
-                    break;
-
-                case TypeID::T_I64:
-                    out << "i64";
-                    break;
-
-                case TypeID::T_F32:
-                    out << "f32";
-                    break;
-
-                case TypeID::T_F64:
-                    out << "f64";
+                case T_F32.val:
+                    out << "f" << ty.size;
                     break;
 
                 default:

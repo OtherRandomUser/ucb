@@ -38,7 +38,8 @@ namespace ucb
 
             if (it == _comp_tys.end())
             {
-                auto res = static_cast<TypeID>(_next_ty_id++);
+                // TODO remove magic word size
+                TypeID res = { _next_ty_id++, 64 };
                 _comp_tys.emplace_back(res, ty);
                 return res;
             }
@@ -48,7 +49,7 @@ namespace ucb
             }
         };
 
-        TypeID get_arr_ty(TypeID sub, int size)
+        TypeID get_arr_ty(TypeID sub, std::uint64_t size)
         {
             CompositeType ty(
                 this,
@@ -64,7 +65,7 @@ namespace ucb
 
             if (it == _comp_tys.end())
             {
-                auto res = static_cast<TypeID>(_next_ty_id++);
+                TypeID res = { _next_ty_id++, size };
                 _comp_tys.emplace_back(res, ty);
                 return res;
             }

@@ -9,7 +9,7 @@ namespace ucb
 {
     Operand::Operand(Procedure *parent):
         _parent{parent},
-        _ty{TypeID::T_VOID},
+        _ty{T_VOID},
         _kind{OperandKind::OK_POISON},
         _is_def{false},
         _reg{NO_REG},
@@ -24,7 +24,7 @@ namespace ucb
     Operand::Operand(Procedure *parent, RegisterID reg, bool is_def):
         Operand(parent)
     {
-        assert(reg && "Virtual register is null");
+        assert(reg != NO_REG && "Virtual register is null");
         _kind = OperandKind::OK_VIRTUAL_REG;
         auto r = _parent->get_register(reg);
         assert(r && "Virtual register not found");
@@ -38,7 +38,7 @@ namespace ucb
     {
         assert(bblock_idx != -1 && "Basic Block is null");
         _kind = OperandKind::OK_BASIC_BLOCK;
-        _ty = TypeID::T_STATIC_ADDRESS;
+        _ty = T_STATIC_ADDRESS;
         _bblock_idx = bblock_idx;
     }
 

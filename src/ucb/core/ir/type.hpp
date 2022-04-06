@@ -12,6 +12,49 @@ namespace ucb
     using MachineOpc = unsigned int;
     constexpr MachineOpc MOP_NONE = 0;
 
+    struct TypeID
+    {
+        std::int64_t val : 54;
+        std::uint64_t size : 10;
+/*
+        bool operator != (const TypeID& other) constexpr
+        {
+            return val != other.val || size != other.size;
+        }
+
+        bool operator == (const TypeID& other) constexpr
+        {
+            return !(*this != other);
+        }
+        */
+
+        bool operator != (const TypeID& other) const = default;
+        bool operator == (const TypeID& other) const = default;
+    };
+
+    constexpr TypeID T_ERROR = { -10, 0 };
+
+    constexpr TypeID T_VOID = { 0, 64 };
+    constexpr TypeID T_STATIC_ADDRESS = { 1, 64 };
+
+    constexpr TypeID T_BOOL = { 2, 8 };
+
+    constexpr TypeID T_U8 = { 3, 8 };
+    constexpr TypeID T_U16 = { 3, 16 };
+    constexpr TypeID T_U32 = { 3, 32 };
+    constexpr TypeID T_U64 = { 3, 64 };
+
+    constexpr TypeID T_I8 = { 4, 8 };
+    constexpr TypeID T_I16 = { 4, 16 };
+    constexpr TypeID T_I32 = { 4, 32 };
+    constexpr TypeID T_I64 = { 4, 64 };
+
+    constexpr TypeID T_F32 = { 5, 32 };
+    constexpr TypeID T_F64 = { 5, 64 };
+
+    constexpr std::int64_t COMP_TY_START = 10;
+
+/*
     enum TypeID : int
     {
         T_ERROR = -10,
@@ -33,7 +76,7 @@ namespace ucb
     };
 
     constexpr TypeID COMP_TY_START = static_cast<TypeID>(20);
-
+*/
     class CompositeType
     {
     public:
@@ -77,24 +120,24 @@ namespace ucb
 
     constexpr bool ty_is_signed_int(TypeID ty)
     {
-        return ty == TypeID::T_I8
-            || ty == TypeID::T_I16
-            || ty == TypeID::T_I32
-            || ty == TypeID::T_I64;
+        return ty == T_I8
+            || ty == T_I16
+            || ty == T_I32
+            || ty == T_I64;
     }
 
     constexpr bool ty_is_unsigned_int(TypeID ty)
     {
-        return ty == TypeID::T_U8
-            || ty == TypeID::T_U16
-            || ty == TypeID::T_U32
-            || ty == TypeID::T_U64;
+        return ty == T_U8
+            || ty == T_U16
+            || ty == T_U32
+            || ty == T_U64;
     }
 
     constexpr bool ty_is_float(TypeID ty)
     {
-        return ty == TypeID::T_F32
-            || ty == TypeID::T_F64;
+        return ty == T_F32
+            || ty == T_F64;
     }
 
     class ProcSignature

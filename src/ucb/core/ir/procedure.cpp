@@ -129,7 +129,7 @@ namespace ucb
         }
         else
         {
-            rid = _next_vreg++;
+            rid = { _next_vreg++, ty.size };
             _frame.emplace_back(rid, VirtualRegister(this, std::move(id), ty));
             return rid;
         }
@@ -146,7 +146,7 @@ namespace ucb
         }
         else
         {
-            rid = _next_vreg++;
+            rid = { _next_vreg++, ty.size };
             _regs.emplace_back(rid, VirtualRegister(this, std::move(id), ty));
             return rid;
         }

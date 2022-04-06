@@ -295,12 +295,12 @@ namespace ucb::frontend
         _bump();
 
         Operand tgt;
-        if (!_parse_opnd(tgt, TypeID::T_STATIC_ADDRESS, false))
+        if (!_parse_opnd(tgt, T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
-        auto& inst = _bblock->append_instr(InstrOpcode::OP_BR, TypeID::T_STATIC_ADDRESS);
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_BR, T_STATIC_ADDRESS);
         inst.add_operand(tgt);
 
         return true;
@@ -316,24 +316,24 @@ namespace ucb::frontend
         _bump();
 
         Operand cnd;
-        if (!_parse_opnd(cnd, TypeID::T_BOOL, true))
+        if (!_parse_opnd(cnd, T_BOOL, true))
         {
             return false;
         }
 
         Operand lt;
-        if (!_parse_opnd(lt, TypeID::T_STATIC_ADDRESS, false))
+        if (!_parse_opnd(lt, T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
         Operand lf;
-        if (!_parse_opnd(lf, TypeID::T_STATIC_ADDRESS, false))
+        if (!_parse_opnd(lf, T_STATIC_ADDRESS, false))
         {
             return false;
         }
 
-        auto& inst = _bblock->append_instr(InstrOpcode::OP_BRC, TypeID::T_STATIC_ADDRESS);
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_BRC, T_STATIC_ADDRESS);
         inst.add_operand(cnd);
         inst.add_operand(lt);
         inst.add_operand(lf);
@@ -354,7 +354,7 @@ namespace ucb::frontend
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_RET, ty);
 
-        if (ty != TypeID::T_VOID)
+        if (ty != T_VOID)
         {
             Operand opnd;
             if (!_parse_opnd(opnd, ty, false))
@@ -629,7 +629,7 @@ namespace ucb::frontend
 
         while (true)
         {
-            auto opnd_ty = TypeID::T_ERROR;
+            auto opnd_ty = T_ERROR;
             Operand opnd;
             if (!_parse_opnd(opnd, opnd_ty, false))
             {
@@ -663,7 +663,7 @@ namespace ucb::frontend
 
         _bump();
 
-        auto ty = TypeID::T_ERROR;
+        auto ty = T_ERROR;
         if (!_parse_ty(ty))
         {
             return false;
@@ -673,7 +673,7 @@ namespace ucb::frontend
 
         if (reg == NO_REG)
         {
-            _proc->add_vreg(def_id, TypeID::T_BOOL);
+            _proc->add_vreg(def_id, T_BOOL);
         }
 
         auto def = _proc->operand_from_vreg(def_id, true);
@@ -701,7 +701,7 @@ namespace ucb::frontend
 
     bool Parser::_parse_ty(TypeID& ty)
     {
-        ty = TypeID::T_ERROR;
+        ty = T_ERROR;
 
         if (_cur.ty == TokenType::ID_OTHER && _cur.lexema == "array")
         {
@@ -712,7 +712,7 @@ namespace ucb::frontend
             CHECK_TK(of, of.ty == TokenType::ID_OTHER && of.lexema == "of", "of");
 
             _bump();
-            auto sub = TypeID::T_ERROR;
+            auto sub = T_ERROR;
             if (!_parse_ty(sub))
             {
                 return false;
@@ -726,7 +726,7 @@ namespace ucb::frontend
         {
             _bump();
 
-            auto sub = TypeID::T_ERROR;
+            auto sub = T_ERROR;
             if (!_parse_ty(sub))
             {
                 return false;
@@ -746,51 +746,51 @@ namespace ucb::frontend
             return false;
 
         case TY_VOID:
-            ty = TypeID::T_VOID;
+            ty = T_VOID;
             return true;
 
         case TY_BOOL:
-            ty = TypeID::T_BOOL;
+            ty = T_BOOL;
             return true;
 
         case TY_I8:
-            ty = TypeID::T_I8;
+            ty = T_I8;
             return true;
 
         case TY_I16:
-            ty = TypeID::T_I16;
+            ty = T_I16;
             return true;
 
         case TY_I32:
-            ty = TypeID::T_I32;
+            ty = T_I32;
             return true;
 
         case TY_I64:
-            ty = TypeID::T_I64;
+            ty = T_I64;
             return true;
 
         case TY_U8:
-            ty = TypeID::T_U8;
+            ty = T_U8;
             return true;
 
         case TY_U16:
-            ty = TypeID::T_U16;
+            ty = T_U16;
             return true;
 
         case TY_U32:
-            ty = TypeID::T_U32;
+            ty = T_U32;
             return true;
 
         case TY_U64:
-            ty = TypeID::T_U64;
+            ty = T_U64;
             return true;
 
         case TY_F32:
-            ty = TypeID::T_F32;
+            ty = T_F32;
             return true;
 
         case TY_F64:
-            ty = TypeID::T_F64;
+            ty = T_F64;
             return true;
         }
     }
@@ -801,7 +801,7 @@ namespace ucb::frontend
 
         if (_cur.ty == TokenType::ID_LOCAL)
         {
-            if (ty == TypeID::T_STATIC_ADDRESS)
+            if (ty == T_STATIC_ADDRESS)
             {
                 auto lex = std::string(_cur.lexema);
 

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 #include <ucb/core/ir/type.hpp>
 
@@ -9,21 +10,36 @@ namespace ucb
 {
     class Procedure;
     class Instruction;
-/*
+
     struct RegisterID
     {
         std::uint64_t val : 54;
         std::uint64_t size : 10;
+/*
+        bool operator != (const RegisterID& other) const
+        {
+            return val != other.val || size != other.size;
+        }
+
+        bool operator == (const RegisterID& other) const
+        {
+            return !(*this != other);
+        }
+        */
+
+        bool operator != (const RegisterID& other) const = default;
+        bool operator == (const RegisterID& other) const = default;
     };
+
+    inline std::ostream& operator << (std::ostream& os, const RegisterID rid)
+    {
+        os << "{ " << rid.val << ", " << rid.size << " }";
+        return os;
+    }
 
     constexpr RegisterID NO_REG = { 0, 0 };
     constexpr std::uint64_t PREG_START = 1;
     constexpr std::uint64_t VREG_START = 100;
-*/
-    using RegisterID = unsigned int;
-
-    constexpr RegisterID VREG_START = 100;
-    constexpr RegisterID NO_REG = 0;
 
     class VirtualRegister
     {
