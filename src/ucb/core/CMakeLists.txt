@@ -8,6 +8,7 @@ target_sources(ucb-core
         ir/procedure.hpp
         ir/type.hpp
         ir/value.hpp
+        isel/dag.hpp
         isel/dp-isel.hpp
         isel/isel.hpp
     PRIVATE
@@ -18,6 +19,7 @@ target_sources(ucb-core
         ir/instruction.cpp
         ir/machine-instruction.hpp
         ir/procedure.cpp
+        isel/dag.cpp
         isel/dp-isel.cpp
 )
 

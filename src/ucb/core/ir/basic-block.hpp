@@ -33,6 +33,8 @@ namespace ucb
             return _insts.emplace_back(this, op, ty, std::move(id));
         }
 
+        std::list<Instruction>& insts() { return _insts; }
+
         void dump(std::ostream& out);
         void dump_ty(std::ostream& out, TypeID ty);
 

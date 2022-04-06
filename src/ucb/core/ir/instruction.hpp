@@ -38,10 +38,11 @@ namespace ucb
         OperandKind kind() const { return _kind; }
         const TypeID ty() const { return _ty; }
 
-        RegisterID get_virtual_reg() const;
-        int get_bblock_idx() const;
-        long int get_integer_val() const;
-        double get_float_val() const;
+        RegisterID get_virtual_reg() const { return _reg; }
+        int get_bblock_idx() const { return _bblock_idx; }
+        long int get_integer_val() const { return _integer_val; }
+        unsigned long get_unsigned_val() const { return _unsigned_val; }
+        double get_float_val() const { return _float_val; }
 
         void dump(std::ostream& out);
 
@@ -61,6 +62,8 @@ namespace ucb
         {
             return !(*this != other);
         }
+
+        bool is_def() { return _is_def; }
 
     private:
         explicit Operand(Procedure *parent);
@@ -132,6 +135,29 @@ namespace ucb
         void add_operand(Operand opnd);
 
         void dump(std::ostream& out);
+
+        bool is_terminator() const
+        {
+            return _op == InstrOpcode::OP_BR
+                || _op == InstrOpcode::OP_BRC
+                || _op == InstrOpcode::OP_RET;
+        }
+
+        bool is_store() const
+        {
+            return _op == InstrOpcode::OP_STORE;
+        }
+
+        bool is_side_effect() const
+        {
+            return is_terminator()
+                || is_store();
+        }
+
+        std::vector<Operand>& opnds()
+        {
+            return _opnds;
+        }
 
     private:
         BasicBlock *_parent;
