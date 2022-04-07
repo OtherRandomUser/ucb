@@ -1,7 +1,9 @@
 target_sources(ucb-core
     PUBLIC
         pass-manager.hpp
+        target.hpp
         target-machine.hpp
+        backend/x64.hpp
         ir/basic-block.hpp
         ir/compile-unit.hpp
         ir/instruction.hpp

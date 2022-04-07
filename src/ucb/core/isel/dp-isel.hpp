@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ucb/core/target.hpp>
 #include <ucb/core/isel/isel.hpp>
 // #include <ucb/core/isel/dag.hpp>
 // #include <ucb/core/isel/pat.hpp>
@@ -10,7 +11,15 @@ namespace ucb
     class DynamicISel : public ISel
     {
     public:
+        DynamicISel(std::shared_ptr<Target> target):
+            _target(std::move(target))
+        {
+        }
+
         void run_on_procedure(std::shared_ptr<Procedure> proc) override;
         void run_on_bblock(BasicBlock& bblock);
+
+    private:
+        std::shared_ptr<Target> _target;
     };
 }
