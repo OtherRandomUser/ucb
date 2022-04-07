@@ -35,6 +35,12 @@ namespace ucb
         std::list<MachineIntruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
     };
 
+    struct MatchResult
+    {
+        bool is_match;
+        std::vector<std::shared_ptr<DagNode>> selected_opnds;
+    };
+
     struct Pat
     {
         std::uint8_t cost;
@@ -42,7 +48,7 @@ namespace ucb
         PatNode pat;
         std::vector<RepNode> reps;
 
-        bool match(std::shared_ptr<DagNode> n);
+        MatchResult match(std::shared_ptr<DagNode> n);
         std::list<MachineIntruction> replace(std::shared_ptr<DagNode> n);
     };
 }

@@ -21,5 +21,9 @@ namespace ucb
 
     private:
         std::shared_ptr<Target> _target;
+        std::vector<Pat> _pats;
+
+        void recursive_match(std::shared_ptr<DagNode> n);
+        void recursive_fill(std::shared_ptr<DagNode> n, BasicBlock& bblock);
     };
 }

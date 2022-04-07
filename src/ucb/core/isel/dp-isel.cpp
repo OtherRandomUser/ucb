@@ -86,6 +86,84 @@ namespace ucb
         }
 
         // match
+        _pats = _target->load_pats();
+
+        for (auto n: dag.root_nodes())
+        {
+            recursive_match(n);
+        }
+
         // select
+        for (auto n: dag.root_nodes())
+        {
+            bblock.append_machine_insts(recursive_fill(n));
+        }
+    }
+
+    void DynamicISel::recursive_match(std::shared_ptr<DagNode> n)
+    {
+        if (n->is_leaf())
+        {
+            return;
+        }
+
+        for (auto arg: n->args())
+        {
+            recursive_match(n);
+        }
+
+        Pat *selected = nullptr;
+        std::vector<std::shared_ptr<DagNode>> selected_opnds;
+        float cost = 9000;
+
+        for (auto& pat: _pats)
+        {
+            auto res = pat.match(n);
+
+            if (res.is_match)
+            {
+                float match_cost = pat.cost;
+
+                for (auto opnd: res.selected_opnds)
+                {
+                    match_cost += opnd->cost();
+                }
+
+                if (match_cost < cost)
+                {
+                    cost = match_cost;
+                    selected = &pat;
+                    selected_opnds = std::move(res.selected_opnds);
+                }
+            }
+        }
+
+        if (selected == nullptr)
+        {
+            std::cerr << "failed to match node\n";
+            n->dump(std::cerr, nullptr);
+            abort();
+        }
+
+        n->set_selected_insts(selected->replace(n));
+        n->set_selected_args(std::move(selected_opnds));
+    }
+
+    void DynamicISel::recursive_fill(std::shared_ptr<DagNode> n, BasicBlock& bblock)
+    {
+        if (n->is_leaf())
+        {
+            return;
+        }
+
+        for (auto arg: n->args())
+        {
+            recursive_fill(arg, bblock);
+        }
+
+        for (auto arg: n->selected_args())
+        {
+            bblock.append_selected_inst(arg);
+        }
     }
 }

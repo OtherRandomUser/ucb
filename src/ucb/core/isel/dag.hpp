@@ -37,7 +37,7 @@ namespace ucb
         {
         }
 
-        bool is_leaf() const { return _args.empty(); }
+        bool is_leaf() const { return _args.empty() && _opc == InstrOpcode::OP_NONE; }
         DagDefKind kind() const { return _kind; }
         InstrOpcode opc() const { return _opc; }
         TypeID ty() const { return _ty; }
@@ -80,6 +80,7 @@ namespace ucb
 
         std::vector<std::shared_ptr<DagNode>> _args;
         std::vector<std::shared_ptr<DagNode>> _selected_args;
+        std::list<MachineIntruction> _selected_insts;
     };
 
     /*
