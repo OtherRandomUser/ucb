@@ -8,6 +8,12 @@
 
 namespace ucb
 {
+    struct MatchResult
+    {
+        bool is_match;
+        std::vector<std::shared_ptr<DagNode>> selected_opnds;
+    };
+
     struct PatNode
     {
         enum Kind
@@ -22,7 +28,7 @@ namespace ucb
 
         std::vector<PatNode> opnds;
 
-        bool match(std::shared_ptr<DagNode> n);
+        MatchResult match(std::shared_ptr<DagNode> n);
         void get_args(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>>& args);
     };
 
@@ -33,12 +39,6 @@ namespace ucb
         std::vector<std::uint8_t> opnds;
 
         std::list<MachineIntruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
-    };
-
-    struct MatchResult
-    {
-        bool is_match;
-        std::vector<std::shared_ptr<DagNode>> selected_opnds;
     };
 
     struct Pat

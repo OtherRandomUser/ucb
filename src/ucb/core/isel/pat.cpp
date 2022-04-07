@@ -2,34 +2,36 @@
 
 namespace ucb
 {
-    bool Pat::match(std::shared_ptr<DagNode> n)
+    MatchResult Pat::match(std::shared_ptr<DagNode> n)
     {
         assert(n);
         return pat.match(n);
     }
 
-    bool PatNode::match(std::shared_ptr<DagNode> n)
+    MatchResult PatNode::match(std::shared_ptr<DagNode> n)
     {
         assert(n);
+        MatchResult res;
+        res.is_match = false;
 
         // TODO relax to is supper of so that pointers work
         if (ty != n->ty())
         {
-            return false;
+            return res;
         }
 
         if (kind == PatNode::Inst)
         {
             if (opc != n->opc())
             {
-                return false;
+                return res;
             }
 
             auto& args = n->args();
 
             if (opnds.size() != args.size())
             {
-                return false;
+                return res;
             }
 
             auto ita = opnds.begin();
@@ -37,7 +39,18 @@ namespace ucb
 
             while (ita != opnds.end() && itb != args.end())
             {
-                ita->match(*itb);
+                auto match_res = ita->match(*itb);
+
+                if (!match_res.is_match)
+                {
+                    return res;
+                }
+
+                res.selected_opnds.insert(
+                    res.selected_opnds.end(),
+                    std::make_move_iterator(match_res.selected_opnds.begin()),
+                    std::make_move_iterator(match_res.selected_opnds.begin())
+                );
 
                 ita++;
                 itb++;
@@ -52,22 +65,26 @@ namespace ucb
                 assert(false && "unreachable");
 
             case OperandKind::OK_VIRTUAL_REG:
-                if (n->kind() != DagDefKind::DDK_REG) { return false; }
+                if (n->kind() != DagDefKind::DDK_REG) { return res; }
                 break;
 
             case OperandKind::OK_INTEGER_CONST:
             case OperandKind::OK_UNSIGNED_CONST:
             case OperandKind::OK_FLOAT_CONST:
-                if (n->kind() != DagDefKind::DDK_IMM) { return false; }
+                if (n->kind() != DagDefKind::DDK_IMM) { return res; }
                 break;
 
             case OperandKind::OK_BASIC_BLOCK:
-                if (n->kind() != DagDefKind::DDK_ADDR) { return false; }
+                if (n->kind() != DagDefKind::DDK_ADDR) { return res; }
                 break;
             }
+
+            res.selected_opnds.push_back(std::move(n));
         }
 
-        return true;
+        res.is_match = true;
+
+        return res;
     }
 
     void PatNode::get_args(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>>& args)
