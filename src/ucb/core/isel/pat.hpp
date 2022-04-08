@@ -38,7 +38,7 @@ namespace ucb
         MachineOpc opc;
         std::vector<std::uint8_t> opnds;
 
-        std::list<MachineIntruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
+        std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
     };
 
     struct Pat
@@ -49,6 +49,6 @@ namespace ucb
         std::vector<RepNode> reps;
 
         MatchResult match(std::shared_ptr<DagNode> n);
-        std::list<MachineIntruction> replace(std::shared_ptr<DagNode> n);
+        std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n);
     };
 }

@@ -22,7 +22,7 @@ namespace ucb
         std::uint64_t val;
     };
 
-    struct MachineIntruction
+    struct MachineInstruction
     {
         std::uint64_t opc;
         std::vector<MachineOperand> opnds;

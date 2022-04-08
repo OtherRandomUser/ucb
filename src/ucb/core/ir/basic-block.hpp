@@ -33,6 +33,15 @@ namespace ucb
             return _insts.emplace_back(this, op, ty, std::move(id));
         }
 
+        void append_machine_insts(std::list<MachineInstruction> insts)
+        {
+            _machine_insts.insert(
+                _machine_insts.begin(),
+                std::make_move_iterator(insts.begin()),
+                std::make_move_iterator(insts.end())
+            );
+        }
+
         std::list<Instruction>& insts() { return _insts; }
 
         void dump(std::ostream& out);
@@ -42,5 +51,6 @@ namespace ucb
         Procedure *_parent;
         std::string _id;
         std::list<Instruction> _insts;
+        std::list<MachineInstruction> _machine_insts;
     };
 }

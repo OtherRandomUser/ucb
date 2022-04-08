@@ -44,8 +44,11 @@ namespace ucb
         RegisterID reg() const { return _reg; }
         std::uint64_t imm_val() const { return _imm_val; }
         const std::string& id() const { return _id; }
+        float cost() const { return _cost; }
 
         std::vector<std::shared_ptr<DagNode>>& args() { return _args; }
+        std::vector<std::shared_ptr<DagNode>>& selected_args() { return _selected_args; }
+        std::list<MachineInstruction>& selected_insts() { return _selected_insts; }
 
         DagNode& add_arg(std::shared_ptr<DagNode> arg)
         {
@@ -57,6 +60,24 @@ namespace ucb
         {
             _selected_args.push_back(std::move(arg));
             return *this;
+        }
+
+        void add_selected_args(std::vector<std::shared_ptr<DagNode>> args)
+        {
+            _selected_args.insert(
+                _selected_args.end(),
+                std::make_move_iterator(args.begin()),
+                std::make_move_iterator(args.end())
+            );
+        }
+
+        void add_selected_insts(std::list<MachineInstruction> insts)
+        {
+            _selected_insts.insert(
+                _selected_insts.end(),
+                std::make_move_iterator(insts.begin()),
+                std::make_move_iterator(insts.end())
+            );
         }
 
         void dump(std::ostream& out, std::shared_ptr<CompileUnit> context);
@@ -80,7 +101,7 @@ namespace ucb
 
         std::vector<std::shared_ptr<DagNode>> _args;
         std::vector<std::shared_ptr<DagNode>> _selected_args;
-        std::list<MachineIntruction> _selected_insts;
+        std::list<MachineInstruction> _selected_insts;
     };
 
     /*
@@ -131,6 +152,8 @@ namespace ucb
             _root_nodes.push_back(def);
             add_def(std::move(def));
         }
+
+        std::vector<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
 
         void dump(std::ostream& out, std::shared_ptr<CompileUnit> context);
 

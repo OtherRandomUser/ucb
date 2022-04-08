@@ -96,7 +96,7 @@ namespace ucb
         // select
         for (auto n: dag.root_nodes())
         {
-            bblock.append_machine_insts(recursive_fill(n));
+            recursive_fill(n, bblock);
         }
     }
 
@@ -145,8 +145,8 @@ namespace ucb
             abort();
         }
 
-        n->set_selected_insts(selected->replace(n));
-        n->set_selected_args(std::move(selected_opnds));
+        n->add_selected_insts(selected->replace(n));
+        n->add_selected_args(std::move(selected_opnds));
     }
 
     void DynamicISel::recursive_fill(std::shared_ptr<DagNode> n, BasicBlock& bblock)
@@ -156,14 +156,11 @@ namespace ucb
             return;
         }
 
-        for (auto arg: n->args())
+        for (auto arg: n->selected_args())
         {
             recursive_fill(arg, bblock);
         }
 
-        for (auto arg: n->selected_args())
-        {
-            bblock.append_selected_inst(arg);
-        }
+        bblock.append_machine_insts(n->selected_insts());
     }
 }

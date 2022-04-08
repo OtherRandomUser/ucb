@@ -115,17 +115,17 @@ namespace ucb
         }
     }
 
-    std::list<MachineIntruction> Pat::replace(std::shared_ptr<DagNode> n)
+    std::list<MachineInstruction> Pat::replace(std::shared_ptr<DagNode> n)
     {
         assert(n);
-        std::list<MachineIntruction> res;
+        std::list<MachineInstruction> res;
 
         std::vector<std::shared_ptr<DagNode>> args;
         pat.get_args(n, args);
 
         for (auto& r: reps)
         {
-            MachineIntruction inst;
+            MachineInstruction inst;
 
             inst.opc = r.opc;
             inst.id = n->id();
@@ -172,10 +172,10 @@ namespace ucb
         return res;
     }
 
-    std::list<MachineIntruction> RepNode::replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args)
+    std::list<MachineInstruction> RepNode::replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args)
     {
         assert(n);
-        std::list<MachineIntruction> res;
+        std::list<MachineInstruction> res;
 
 
 
