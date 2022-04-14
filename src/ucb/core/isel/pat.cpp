@@ -49,7 +49,7 @@ namespace ucb
                 res.selected_opnds.insert(
                     res.selected_opnds.end(),
                     std::make_move_iterator(match_res.selected_opnds.begin()),
-                    std::make_move_iterator(match_res.selected_opnds.begin())
+                    std::make_move_iterator(match_res.selected_opnds.end())
                 );
 
                 ita++;
@@ -133,34 +133,43 @@ namespace ucb
             for (auto op: r.opnds)
             {
                 MachineOperand mop;
-                auto on = args[op];
 
-                switch (on->kind())
+                if (op == -1)
                 {
-                case DagDefKind::DDK_NONE:
-                    assert(false && "unreachable");
-
-                case DagDefKind::DDK_REG:
                     mop.kind = MachineOperand::Register;
-                    mop.val = std::bit_cast<std::uint64_t>(on->reg());
-                    break;
+                    mop.val = std::bit_cast<std::uint64_t>(n->reg());
+                }
+                else
+                {
+                    auto on = args[op];
 
-                case DagDefKind::DDK_MEM:
-                    assert(false && "unreachable");
-                    // TODO
+                    switch (on->kind())
+                    {
+                    case DagDefKind::DDK_NONE:
+                        assert(false && "unreachable");
 
-                case DagDefKind::DDK_IMM:
-                    mop.kind = MachineOperand::Imm;
-                    mop.val = on->imm_val();
-                    break;
+                    case DagDefKind::DDK_REG:
+                        mop.kind = MachineOperand::Register;
+                        mop.val = std::bit_cast<std::uint64_t>(on->reg());
+                        break;
 
-                case DagDefKind::DDK_ADDR:
-                    assert(false && "unreachable");
-                    // TODO
+                    case DagDefKind::DDK_MEM:
+                        assert(false && "unreachable");
+                        // TODO
 
-                case DagDefKind::DDK_ENTRY:
-                case DagDefKind::DDK_EXIT:
-                    assert(false && "unreachable");
+                    case DagDefKind::DDK_IMM:
+                        mop.kind = MachineOperand::Imm;
+                        mop.val = on->imm_val();
+                        break;
+
+                    case DagDefKind::DDK_ADDR:
+                        assert(false && "unreachable");
+                        // TODO
+
+                    case DagDefKind::DDK_ENTRY:
+                    case DagDefKind::DDK_EXIT:
+                        assert(false && "unreachable");
+                    }
                 }
 
                 inst.opnds.push_back(std::move(mop));
@@ -171,7 +180,7 @@ namespace ucb
 
         return res;
     }
-
+/*
     std::list<MachineInstruction> RepNode::replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args)
     {
         assert(n);
@@ -181,4 +190,5 @@ namespace ucb
 
         return res;
     }
+*/
 }

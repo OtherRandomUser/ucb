@@ -36,9 +36,9 @@ namespace ucb
     {
         TypeID ty;
         MachineOpc opc;
-        std::vector<std::uint8_t> opnds;
+        std::vector<std::int8_t> opnds;
 
-        std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
+        //std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
     };
 
     struct Pat

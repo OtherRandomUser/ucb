@@ -49,6 +49,7 @@ namespace ucb
         int find_bblock(const std::string& id);
         BasicBlock* get_bblock(int idx);
         int add_bblock(std::string id);
+        void compute_predecessors();
         Operand operand_from_bblock(const std::string& id);
 
         RegisterID find_vreg(const std::string& id);
@@ -56,6 +57,8 @@ namespace ucb
         RegisterID add_frame_slot(std::string id, TypeID ty);
         RegisterID add_vreg(std::string id, TypeID ty);
         Operand operand_from_vreg(const std::string& id, bool is_def);
+
+        CompileUnit* context() { return _parent; }
 
         void dump(std::ostream& out);
         void dump_ty(std::ostream& out, TypeID ty);

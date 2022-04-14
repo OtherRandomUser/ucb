@@ -23,6 +23,8 @@ namespace ucb
         const Procedure* parent() const { return _parent; }
         const std::string& id() const { return _id; }
 
+        bool compute_live_ins();
+
         Instruction& append_instr(InstrOpcode op, TypeID ty)
         {
             return _insts.emplace_back(this, op, ty);
@@ -36,13 +38,20 @@ namespace ucb
         void append_machine_insts(std::list<MachineInstruction> insts)
         {
             _machine_insts.insert(
-                _machine_insts.begin(),
+                _machine_insts.end(),
                 std::make_move_iterator(insts.begin()),
                 std::make_move_iterator(insts.end())
             );
         }
 
         std::list<Instruction>& insts() { return _insts; }
+        std::list<MachineInstruction>& machine_insts() { return _machine_insts; }
+
+        std::vector<BasicBlock*>& predecessors() { return _predecessors; }
+        std::vector<BasicBlock*>& successors() { return _successors; }
+        std::vector<std::pair<RegisterID, TypeID>>& live_ins() { return _live_ins; }
+
+        CompileUnit* context();
 
         void dump(std::ostream& out);
         void dump_ty(std::ostream& out, TypeID ty);
@@ -52,5 +61,9 @@ namespace ucb
         std::string _id;
         std::list<Instruction> _insts;
         std::list<MachineInstruction> _machine_insts;
+
+        std::vector<BasicBlock*> _predecessors;
+        std::vector<BasicBlock*> _successors;
+        std::vector<std::pair<RegisterID, TypeID>> _live_ins;
     };
 }

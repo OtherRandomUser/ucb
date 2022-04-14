@@ -1,12 +1,15 @@
 -- kind of necessary -- 
 * make ir objects
-    * finish representation
-    * write verify methods
-    * write dump methods
-    * integrate with parser
+    * double check vectors types
+    * write verify methods (skipable)
 * compile api
+    * register allocation api
 * instruction selection pass
-*  register allocation pass
+    * add successors to root nodes
+    * add multiple use registers to root nodes
+    * relax matching constraints to match types more flexibly (cam be done after the first development pass)
+    * add frame slots
+* register allocation pass
 * code emission
 
 -- important, but skipable --

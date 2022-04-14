@@ -8,6 +8,8 @@
 
 namespace ucb
 {
+    class Procedure;
+
     struct MachineOperand
     {
         enum Kind

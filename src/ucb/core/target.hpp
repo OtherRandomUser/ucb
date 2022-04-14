@@ -12,5 +12,6 @@ namespace ucb
         virtual ~Target() = default;
 
         virtual std::vector<Pat> load_pats() = 0;
+        virtual void dump_bblock(BasicBlock& bblock, std::ostream& out) = 0;
     };
 }

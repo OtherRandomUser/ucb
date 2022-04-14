@@ -133,6 +133,7 @@ namespace ucb
         const std::string& id() const { return _id; }
 
         void add_operand(Operand opnd);
+        std::vector<Operand>& opnds() { return _opnds; }
 
         void dump(std::ostream& out);
 
@@ -152,11 +153,6 @@ namespace ucb
         {
             return is_terminator()
                 || is_store();
-        }
-
-        std::vector<Operand>& opnds()
-        {
-            return _opnds;
         }
 
     private:

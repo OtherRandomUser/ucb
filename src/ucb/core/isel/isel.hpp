@@ -7,7 +7,7 @@ namespace ucb
     class ISel
     {
     public:
-        virtual void run_on_procedure(std::shared_ptr<Procedure> proc) = 0;
+        virtual void run_on_procedure(std::shared_ptr<Procedure> proc, bool debug) = 0;
 
         virtual ~ISel() = default;
     };

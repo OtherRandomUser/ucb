@@ -4,21 +4,40 @@
 
 namespace ucb
 {
-    void DynamicISel::run_on_procedure(std::shared_ptr<Procedure> proc)
+    void DynamicISel::run_on_procedure(std::shared_ptr<Procedure> proc, bool debug)
     {
+        if (debug)
+        {
+            std::cout << "instruction selection for procedure: " << proc->id() << "\n\n";
+        }
+
+        proc->compute_predecessors();
+
         for (auto& bblock: proc->bblocks())
         {
-            run_on_bblock(bblock);
+            run_on_bblock(bblock, debug);
         }
     }
 
-    void DynamicISel::run_on_bblock(BasicBlock& bblock)
+    void DynamicISel::run_on_bblock(BasicBlock& bblock, bool debug)
     {
-        // compute live ins & live outs
+        if (debug)
+        {
+            std::cout << "instruction selection for basic block:\n\n";
+            bblock.dump(std::cout);
+            std::cout << std::endl;
+        }
 
         // build dag
         Dag dag;
         int order = 0;
+
+        for(auto [id, ty]: bblock.live_ins())
+        {
+            auto n = std::make_shared<DagNode>(0, InstrOpcode::OP_NONE, DagDefKind::DDK_REG, ty, "");
+            n->reg() = id;
+            dag.add_def(n);
+        }
 
         for (auto& inst: bblock.insts())
         {
@@ -40,6 +59,7 @@ namespace ucb
             {
                 if (op.is_def())
                 {
+                    n->reg() = op.get_virtual_reg();
                     continue;
                 }
 
@@ -85,12 +105,19 @@ namespace ucb
             }
         }
 
+        if (debug)
+        {
+            dag.dump(std::cout, *bblock.context());
+        }
+
+        std::cout << "built dag" << std::endl;
+
         // match
         _pats = _target->load_pats();
 
         for (auto n: dag.root_nodes())
         {
-            recursive_match(n);
+            recursive_match(n, *bblock.context());
         }
 
         // select
@@ -98,9 +125,15 @@ namespace ucb
         {
             recursive_fill(n, bblock);
         }
+
+        if (debug)
+        {
+            std::cout << "selected block:" << std::endl;
+            _target->dump_bblock(bblock, std::cout);
+        }
     }
 
-    void DynamicISel::recursive_match(std::shared_ptr<DagNode> n)
+    void DynamicISel::recursive_match(std::shared_ptr<DagNode> n, CompileUnit& context)
     {
         if (n->is_leaf())
         {
@@ -109,7 +142,7 @@ namespace ucb
 
         for (auto arg: n->args())
         {
-            recursive_match(n);
+            recursive_match(arg, context);
         }
 
         Pat *selected = nullptr;
@@ -141,7 +174,7 @@ namespace ucb
         if (selected == nullptr)
         {
             std::cerr << "failed to match node\n";
-            n->dump(std::cerr, nullptr);
+            n->dump(std::cerr, context);
             abort();
         }
 

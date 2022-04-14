@@ -5,7 +5,6 @@
 #include <ostream>
 #include <vector>
 
-// #include <ucb/core/backend/x64.hpp>
 #include <ucb/core/ir/compile-unit.hpp>
 #include <ucb/core/ir/instruction.hpp>
 #include <ucb/core/ir/type.hpp>
@@ -41,7 +40,7 @@ namespace ucb
         DagDefKind kind() const { return _kind; }
         InstrOpcode opc() const { return _opc; }
         TypeID ty() const { return _ty; }
-        RegisterID reg() const { return _reg; }
+        RegisterID& reg() { return _reg; }
         std::uint64_t imm_val() const { return _imm_val; }
         const std::string& id() const { return _id; }
         float cost() const { return _cost; }
@@ -80,8 +79,8 @@ namespace ucb
             );
         }
 
-        void dump(std::ostream& out, std::shared_ptr<CompileUnit> context);
-        void dump(std::ostream& out, std::shared_ptr<CompileUnit> context, const std::string& pre);
+        void dump(std::ostream& out, CompileUnit& context);
+        void dump(std::ostream& out, CompileUnit& context, const std::string& pre);
 
     private:
         int _og_order;
@@ -153,9 +152,14 @@ namespace ucb
             add_def(std::move(def));
         }
 
+        // void add_live_in(RegisterID id, TypeID ty)
+        // {
+        //     _live_ins.emplace_back(id, ty);
+        // }
+
         std::vector<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
 
-        void dump(std::ostream& out, std::shared_ptr<CompileUnit> context);
+        void dump(std::ostream& out, CompileUnit& context);
 
     private:
         // std::shared_ptr<DagNode> _entry;
@@ -163,6 +167,7 @@ namespace ucb
 
         std::vector<std::shared_ptr<DagNode>> _all_nodes;
         std::vector<std::shared_ptr<DagNode>> _root_nodes;
+        // std::vector<std::pair<RegisterID, TypeID>> _live_ins;
 
         // std::vector<DagImm> _imms;
         std::vector<DagMem> _mems;

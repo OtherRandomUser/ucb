@@ -39,6 +39,62 @@ namespace ucb
         }
     }
 
+    void Procedure::compute_predecessors()
+    {
+        for (auto& bblock: _bblocks)
+        {
+            auto& terminator = bblock.insts().back();
+            auto& opnds = terminator.opnds();
+
+            auto add_successor = [&](Operand& opnd)
+            {
+                assert(opnd.kind() == OperandKind::OK_BASIC_BLOCK);
+
+                auto bb = get_bblock(opnds.front().get_bblock_idx());
+                assert(bb);
+
+                bblock.successors().push_back(bb);
+                bb->predecessors().push_back(&bblock);
+            };
+
+            switch (terminator.op())
+            {
+            case InstrOpcode::OP_BR:
+                assert(opnds.size() == 1);
+                add_successor(opnds[0]);
+                break;
+
+            case InstrOpcode::OP_BRC:
+                assert(opnds.size() == 3);
+                add_successor(opnds[1]);
+                add_successor(opnds[2]);
+                break;
+
+            case InstrOpcode::OP_RET:
+                break; // no successors and the end of the procedure
+
+            default:
+                std::cerr << "unexpected terminator on bblock " << bblock.id() << std::endl;
+                abort();
+            }
+        }
+
+        auto has_changes = true;
+
+        while (has_changes)
+        {
+            has_changes = false;
+
+            for (auto& bblock: _bblocks)
+            {
+                if (bblock.compute_live_ins())
+                {
+                    has_changes = true;
+                }
+            }
+        }
+    }
+
     Operand Procedure::operand_from_bblock(const std::string& id)
     {
         auto idx = find_bblock(id);

@@ -4,17 +4,42 @@
 
 namespace ucb
 {
-    void DagNode::dump(std::ostream& out, std::shared_ptr<CompileUnit> context)
+    void DagNode::dump(std::ostream& out, CompileUnit& context)
     {
-        dump(out, std::move(context), "");
+        dump(out, context, "");
     }
 
-    void DagNode::dump(std::ostream& out, std::shared_ptr<CompileUnit> context, const std::string& pre)
+    void DagNode::dump(std::ostream& out, CompileUnit& context, const std::string& pre)
     {
         out << pre;
 
         auto dump_inst = [&]()
         {
+            switch (_opc)
+            {
+            case InstrOpcode::OP_NONE: out << " = NONE\n"; return;
+            case InstrOpcode::OP_ADD: out << " = add\n"; return;
+            case InstrOpcode::OP_SUB: out << " = sub\n"; return;
+            case InstrOpcode::OP_MUL: out << " = mul\n"; return;
+            case InstrOpcode::OP_DIV: out << " = div\n"; return;
+            case InstrOpcode::OP_REM: out << " = rem\n"; return;
+            case InstrOpcode::OP_NOT: out << " = not\n"; return;
+            case InstrOpcode::OP_AND: out << " = and\n"; return;
+            case InstrOpcode::OP_OR: out << " = or\n"; return;
+            case InstrOpcode::OP_XOR: out << " = xor\n"; return;
+            case InstrOpcode::OP_SHL: out << " = shl\n"; return;
+            case InstrOpcode::OP_SHR: out << " = shr\n"; return;
+            case InstrOpcode::OP_CAST: out << " = cast\n"; return;
+            case InstrOpcode::OP_CMP: out << " = cmp " << _id << "\n"; return;
+            case InstrOpcode::OP_BR: out << " = br\n"; return;
+            case InstrOpcode::OP_BRC: out << " = brc\n"; return;
+            case InstrOpcode::OP_ALLOC: out << "alloc\n"; return;
+            case InstrOpcode::OP_LOAD: out << " = load\n"; return;
+            case InstrOpcode::OP_STORE: out << "store\n"; return;
+            case InstrOpcode::OP_CP: out << " = cp\n"; return;
+            case InstrOpcode::OP_CALL: out << " = call " << _id << "\n"; return;
+            case InstrOpcode::OP_RET: out << "ret\n"; return;
+            }
         };
 
         switch (_kind)
@@ -23,7 +48,7 @@ namespace ucb
             assert(false && "unreachable");
 
         case DagDefKind::DDK_REG:
-            context->dump_ty(out, _ty);
+            context.dump_ty(out, _ty);
             out << " " << _reg << "";
             dump_inst();
             break;
@@ -72,7 +97,7 @@ namespace ucb
             }
         }
 
-        std::cerr << "register not foundi\n";
+        std::cerr << "register not found\n";
         abort();
     }
 /*
@@ -94,7 +119,7 @@ namespace ucb
     std::shared_ptr<DagNode> get_float_imm(double val, TypeID ty);
     */
 
-    void Dag::dump(std::ostream& out, std::shared_ptr<CompileUnit> context)
+    void Dag::dump(std::ostream& out, CompileUnit& context)
     {
         for (auto& n: _root_nodes)
         {

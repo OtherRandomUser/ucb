@@ -17,6 +17,7 @@ target_sources(ucb-core
     PRIVATE
         pass-manager.cpp
         target-machine.cpp
+        backend/x64.cpp
         ir/basic-block.cpp
         ir/compile-unit.cpp
         ir/instruction.cpp
