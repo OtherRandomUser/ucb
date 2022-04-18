@@ -24,6 +24,7 @@ namespace ucb
         const std::string& id() const { return _id; }
 
         bool compute_live_ins();
+        void compute_live_outs();
 
         Instruction& append_instr(InstrOpcode op, TypeID ty)
         {
@@ -52,6 +53,9 @@ namespace ucb
         std::vector<BasicBlock*>& predecessors() { return _predecessors; }
         std::vector<BasicBlock*>& successors() { return _successors; }
         std::vector<std::pair<RegisterID, TypeID>>& live_ins() { return _live_ins; }
+        std::vector<std::pair<RegisterID, TypeID>>& live_outs() { return _live_outs; }
+
+        bool reg_is_live_out(RegisterID reg);
 
         CompileUnit* context();
 

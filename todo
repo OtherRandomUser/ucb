@@ -5,7 +5,6 @@
 * compile api
     * register allocation api
 * instruction selection pass
-    * add successors to root nodes
     * add multiple use registers to root nodes
     * relax matching constraints to match types more flexibly (cam be done after the first development pass)
     * add frame slots

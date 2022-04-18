@@ -95,7 +95,8 @@ namespace ucb
                 }
             }
 
-            if (inst.is_side_effect())
+            if (inst.is_side_effect()
+                || bblock.reg_is_live_out(n->reg()))
             {
                 dag.add_root_def(n);
             }

@@ -71,6 +71,14 @@ namespace ucb::x64
                 .reps = {
                     {
                         .ty = T_I32,
+                        .opc = OPC_RET,
+                        .opnds = {0}
+                    }
+                }
+                /*
+                .reps = {
+                    {
+                        .ty = T_I32,
                         .opc = OPC_MOVE,
                         .opnds = {EAX, 0}
                     },
@@ -80,6 +88,7 @@ namespace ucb::x64
                         .opnds = {EAX}
                     }
                 }
+                */
             }
         };
     }
@@ -119,7 +128,21 @@ namespace ucb::x64
             dump_inst(inst, out);
         }
 
-        out << '\n';
+        if (!bblock.live_outs().empty())
+        {
+            out << "live outs:\n";
+
+            for (auto [id, ty]: bblock.live_outs())
+            {
+                out << "\t\t";
+                bblock.context()->dump_ty(out, ty);
+                out << " { " << id.val << ", " << id.size << " }\n";
+            }
+
+            out << "\n";
+        }
+
+        out << "\n";
     }
 
     void X64Target::dump_inst(MachineInstruction& inst, std::ostream& out)

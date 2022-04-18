@@ -75,6 +75,25 @@ namespace ucb
         return false;
     }
 
+    void BasicBlock::compute_live_outs()
+    {
+        for (auto& bblock: _successors)
+        {
+            for (auto reg: bblock->_live_ins)
+            {
+                auto it = std::find(
+                    _live_outs.begin(),
+                    _live_outs.end(),
+                    reg);
+
+                if (it == _live_outs.end())
+                {
+                    _live_outs.push_back(reg);
+                }
+            }
+        }
+    }
+
     void BasicBlock::dump(std::ostream& out)
     {
         out << _id << ":\n";
@@ -116,5 +135,17 @@ namespace ucb
     void BasicBlock::dump_ty(std::ostream& out, TypeID ty)
     {
         _parent->dump_ty(out, ty);
+    }
+
+    bool BasicBlock::reg_is_live_out(RegisterID reg)
+    {
+        if (reg == NO_REG) { return false; }
+
+        auto it = std::find_if(
+            _live_outs.begin(),
+            _live_outs.end(),
+            [reg](auto r) { return r.first == reg; });
+
+        return it != _live_outs.end();
     }
 }
