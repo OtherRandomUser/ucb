@@ -44,6 +44,8 @@ namespace ucb
             );
         }
 
+        void clear_dataflow();
+
         std::list<Instruction>& insts() { return _insts; }
         std::list<MachineInstruction>& machine_insts() { return _machine_insts; }
 
@@ -65,5 +67,6 @@ namespace ucb
         std::vector<BasicBlock*> _predecessors;
         std::vector<BasicBlock*> _successors;
         std::vector<std::pair<RegisterID, TypeID>> _live_ins;
+        std::vector<std::pair<RegisterID, TypeID>> _live_outs;
     };
 }

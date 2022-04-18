@@ -43,6 +43,11 @@ namespace ucb
     {
         for (auto& bblock: _bblocks)
         {
+            bblock.clear_dataflow();
+        }
+
+        for (auto& bblock: _bblocks)
+        {
             auto& terminator = bblock.insts().back();
             auto& opnds = terminator.opnds();
 
@@ -92,6 +97,11 @@ namespace ucb
                     has_changes = true;
                 }
             }
+        }
+
+        for (auto& bblock: _bblocks)
+        {
+            bblock.compute_live_outs();
         }
     }
 

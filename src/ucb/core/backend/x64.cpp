@@ -71,8 +71,13 @@ namespace ucb::x64
                 .reps = {
                     {
                         .ty = T_I32,
+                        .opc = OPC_MOVE,
+                        .opnds = {EAX, 0}
+                    },
+                    {
+                        .ty = T_I32,
                         .opc = OPC_RET,
-                        .opnds = {0}
+                        .opnds = {EAX}
                     }
                 }
             }

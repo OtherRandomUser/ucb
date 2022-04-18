@@ -7,6 +7,14 @@ namespace ucb
         return _parent->context();
     }
 
+    void BasicBlock::clear_dataflow()
+    {
+        _predecessors.clear();
+        _successors.clear();
+        _live_ins.clear();
+        _live_outs.clear();
+    }
+
     bool BasicBlock::compute_live_ins()
     {
         std::vector<std::pair<RegisterID, TypeID>> new_live_ins;
