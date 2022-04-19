@@ -45,7 +45,9 @@ namespace ucb
         switch (_kind)
         {
         case DagDefKind::DDK_NONE:
-            assert(false && "unreachable");
+            out << "NONE ";
+            dump_inst();
+            break;
 
         case DagDefKind::DDK_REG:
             context.dump_ty(out, _ty);
@@ -54,7 +56,8 @@ namespace ucb
             break;
 
         case DagDefKind::DDK_MEM:
-            // TODO mem
+            context.dump_ty(out, _ty);
+            out << " mem slot #" << _mem_id << " ";
             dump_inst();
             break;
 
@@ -70,6 +73,7 @@ namespace ucb
             assert(false && "unreachable");
 
         case DagDefKind::DDK_EXIT:
+            out << "ENTRY ";
             dump_inst();
             break;
         }

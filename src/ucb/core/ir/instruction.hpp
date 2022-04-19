@@ -21,7 +21,8 @@ namespace ucb
         OK_INTEGER_CONST,
         OK_UNSIGNED_CONST,
         OK_FLOAT_CONST,
-        OK_BASIC_BLOCK
+        OK_BASIC_BLOCK,
+        OK_FRAME_SLOT
     };
 
     class Operand
@@ -34,9 +35,9 @@ namespace ucb
         Operand(Procedure *parent, unsigned long val, TypeID ty);
         Operand(Procedure *parent, double val, TypeID ty);
 
-        const Procedure* parent() const { return _parent; }
+        Procedure* parent() { return _parent; }
         OperandKind kind() const { return _kind; }
-        const TypeID ty() const { return _ty; }
+        TypeID ty() const { return _ty; }
 
         RegisterID get_virtual_reg() const { return _reg; }
         int get_bblock_idx() const { return _bblock_idx; }

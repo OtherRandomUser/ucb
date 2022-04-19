@@ -108,6 +108,9 @@ namespace ucb
                 break;
             }
 
+            case OperandKind::OK_FRAME_SLOT:
+                out << "#" << _bblock_idx;
+
             default:
                 assert(false && "unreachable");
         }

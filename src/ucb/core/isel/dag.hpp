@@ -41,7 +41,8 @@ namespace ucb
         InstrOpcode opc() const { return _opc; }
         TypeID ty() const { return _ty; }
         RegisterID& reg() { return _reg; }
-        std::uint64_t imm_val() const { return _imm_val; }
+        std::uint64_t& imm_val() { return _imm_val; }
+        std::uint64_t& mem_id() { return _mem_id; }
         const std::string& id() const { return _id; }
         float cost() const { return _cost; }
 
@@ -93,7 +94,7 @@ namespace ucb
         RegisterID _reg{NO_REG};
         // int _imm_id{0};
         std::uint64_t _imm_val{0};
-        int _mem_id{0};
+        std::uint64_t _mem_id{0};
 
         float _cost{0};
         int _uses{0};

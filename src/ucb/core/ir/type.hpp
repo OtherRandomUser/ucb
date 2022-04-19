@@ -16,17 +16,6 @@ namespace ucb
     {
         std::int64_t val : 54;
         std::uint64_t size : 10;
-/*
-        bool operator != (const TypeID& other) constexpr
-        {
-            return val != other.val || size != other.size;
-        }
-
-        bool operator == (const TypeID& other) constexpr
-        {
-            return !(*this != other);
-        }
-        */
 
         bool operator != (const TypeID& other) const = default;
         bool operator == (const TypeID& other) const = default;

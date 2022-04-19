@@ -14,16 +14,22 @@ namespace ucb
         MatchResult res;
         res.is_match = false;
 
+        std::cout << "matching" << std::endl;
+
         // TODO relax to is supper of so that pointers work
         if (ty != n->ty())
         {
+            std::cout << "type mismatch" << std::endl;
             return res;
         }
 
         if (kind == PatNode::Inst)
         {
+            std::cout << "matching inst" << std::endl;
+
             if (opc != n->opc())
             {
+                std::cout << "match failed on inst opc" << std::endl;
                 return res;
             }
 
@@ -31,6 +37,7 @@ namespace ucb
 
             if (opnds.size() != args.size())
             {
+                std::cout << "match failed on inst args: " << opnds.size() << " vs " << args.size() << std::endl;
                 return res;
             }
 
@@ -43,6 +50,7 @@ namespace ucb
 
                 if (!match_res.is_match)
                 {
+                    std::cout << "recursive match failed" << std::endl;
                     return res;
                 }
 
@@ -59,6 +67,8 @@ namespace ucb
 
         if (kind == PatNode::Opnd)
         {
+            std::cout << "matching operand" << std::endl;
+
             switch (opnd)
             {
             case OperandKind::OK_POISON:
@@ -77,9 +87,15 @@ namespace ucb
             case OperandKind::OK_BASIC_BLOCK:
                 if (n->kind() != DagDefKind::DDK_ADDR) { return res; }
                 break;
+
+            case OperandKind::OK_FRAME_SLOT:
+                if (n->kind() != DagDefKind::DDK_MEM) { return res; }
+                break;
             }
 
             res.selected_opnds.push_back(std::move(n));
+            std::cout << "operand match succeeded" << std::endl;
+
         }
 
         res.is_match = true;
@@ -154,8 +170,9 @@ namespace ucb
                         break;
 
                     case DagDefKind::DDK_MEM:
-                        assert(false && "unreachable");
-                        // TODO
+                        mop.kind = MachineOperand::FrameSlot;
+                        mop.val = on->mem_id();
+                        break;
 
                     case DagDefKind::DDK_IMM:
                         mop.kind = MachineOperand::Imm;

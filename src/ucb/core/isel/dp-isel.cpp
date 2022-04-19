@@ -32,11 +32,26 @@ namespace ucb
         Dag dag;
         int order = 0;
 
+        std::vector<RegisterID> reg_slots;
+        std::uint64_t mem_id = 0;
+
+        for (auto& [reg, vreg]: bblock.parent()->frame())
+        {
+            auto n = std::make_shared<DagNode>(0, InstrOpcode::OP_NONE, DagDefKind::DDK_MEM, vreg.ty(), "");
+            n->reg() = reg;
+            n->mem_id() = mem_id++;
+            reg_slots.push_back(reg);
+            dag.add_def(n);
+        }
+
         for(auto [id, ty]: bblock.live_ins())
         {
-            auto n = std::make_shared<DagNode>(0, InstrOpcode::OP_NONE, DagDefKind::DDK_REG, ty, "");
-            n->reg() = id;
-            dag.add_def(n);
+            if (std::find(reg_slots.begin(), reg_slots.end(), id) == reg_slots.end())
+            {
+                auto n = std::make_shared<DagNode>(0, InstrOpcode::OP_NONE, DagDefKind::DDK_REG, ty, "");
+                n->reg() = id;
+                dag.add_def(n);
+            }
         }
 
         for (auto& inst: bblock.insts())
@@ -50,7 +65,7 @@ namespace ucb
 
             if (inst.is_store())
             {
-                dk = DagDefKind::DDK_MEM;
+                dk = DagDefKind::DDK_NONE;
             }
 
             auto n = std::make_shared<DagNode>(order++, inst.op(), dk, inst.ty(), inst.id());
@@ -136,8 +151,11 @@ namespace ucb
 
     void DynamicISel::recursive_match(std::shared_ptr<DagNode> n, CompileUnit& context)
     {
+        std::cout << "recursive match call" << std::endl;
+
         if (n->is_leaf())
         {
+            std::cout << "leaf node" << std::endl;
             return;
         }
 
@@ -150,8 +168,12 @@ namespace ucb
         std::vector<std::shared_ptr<DagNode>> selected_opnds;
         float cost = 9000;
 
+        auto count = 0;
+
         for (auto& pat: _pats)
         {
+            std::cout << "matching #" << ++count << std::endl;
+
             auto res = pat.match(n);
 
             if (res.is_match)

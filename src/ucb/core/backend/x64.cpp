@@ -6,6 +6,63 @@ namespace ucb::x64
     {
         return std::initializer_list<Pat>
         {
+            // single load from frame slot
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_I32,
+                    .opc = InstrOpcode::OP_LOAD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_I32,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_FRAME_SLOT
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_I32,
+                        .opc = OPC_MOVE,
+                        .opnds = {-1, 0}
+                    }
+                }
+            },
+            // single store to frame slot
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_I32,
+                    .opc = InstrOpcode::OP_STORE,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_I32,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_FRAME_SLOT
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_I32,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_I32,
+                        .opc = OPC_MOVE,
+                        // .opnds = {-1, 0}
+                        .opnds = {0, 1}
+                    }
+                }
+            },
             // add 2 integer registers
             {
                 .cost = 1,
@@ -15,14 +72,6 @@ namespace ucb::x64
                     .opc = InstrOpcode::OP_ADD,
                     .opnd = OperandKind::OK_POISON,
                     .opnds = {
-                    /*
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_I32,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                    */
                         {
                             .kind = PatNode::Opnd,
                             .ty = T_I32,
@@ -188,7 +237,7 @@ namespace ucb::x64
                     break;
 
                 case MachineOperand::FrameSlot:
-                    out << "fs(" << opnd.val << ")";
+                    out << "fs(#" << opnd.val << ")";
                     break;
 
                 case MachineOperand::BBlockAddress:

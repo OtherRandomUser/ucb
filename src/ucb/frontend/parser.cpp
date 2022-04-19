@@ -283,8 +283,8 @@ namespace ucb::frontend
         }
 
         auto& inst = _bblock->append_instr(InstrOpcode::OP_STORE, ty);
-        inst.add_operand(val);
         inst.add_operand(ref);
+        inst.add_operand(val);
 
         return true;
     }

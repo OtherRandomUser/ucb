@@ -20,7 +20,7 @@ namespace ucb
             assert(_parent);
         }
 
-        const Procedure* parent() const { return _parent; }
+        Procedure* parent() { return _parent; }
         const std::string& id() const { return _id; }
 
         bool compute_live_ins();
