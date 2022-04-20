@@ -50,6 +50,7 @@ namespace ucb
         BasicBlock* get_bblock(int idx);
         int add_bblock(std::string id);
         void compute_predecessors();
+        void compute_machine_lifetimes();
         Operand operand_from_bblock(const std::string& id);
 
         RegisterID find_vreg(const std::string& id);

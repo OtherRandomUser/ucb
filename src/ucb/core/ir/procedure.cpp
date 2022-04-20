@@ -105,6 +105,44 @@ namespace ucb
         }
     }
 
+    void Procedure::compute_machine_lifetimes()
+    {
+        for (auto& bblock: _bblocks)
+        {
+            bblock.clear_lifetimes();
+        }
+
+        auto has_changes = true;
+
+        std::cout << "compute lifetimes" << std::endl;
+
+        while (has_changes)
+        {
+            has_changes = false;
+
+            std::cout << "a" << std::endl;
+            for (auto& bblock: _bblocks)
+            {
+            std::cout << "b" << std::endl;
+                if (bblock.compute_machine_live_ins())
+                {
+            std::cout << "c" << std::endl;
+                    has_changes = true;
+                }
+            std::cout << "d" << std::endl;
+            }
+        }
+
+        std::cout << "compute lifetimes 2" << std::endl;
+
+        for (auto& bblock: _bblocks)
+        {
+            bblock.compute_live_outs();
+        }
+
+        std::cout << "compute lifetimes 3" << std::endl;
+    }
+
     Operand Procedure::operand_from_bblock(const std::string& id)
     {
         auto idx = find_bblock(id);

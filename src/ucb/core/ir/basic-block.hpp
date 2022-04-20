@@ -24,6 +24,7 @@ namespace ucb
         const std::string& id() const { return _id; }
 
         bool compute_live_ins();
+        bool compute_machine_live_ins();
         void compute_live_outs();
 
         Instruction& append_instr(InstrOpcode op, TypeID ty)
@@ -46,6 +47,7 @@ namespace ucb
         }
 
         void clear_dataflow();
+        void clear_lifetimes();
 
         std::list<Instruction>& insts() { return _insts; }
         std::list<MachineInstruction>& machine_insts() { return _machine_insts; }

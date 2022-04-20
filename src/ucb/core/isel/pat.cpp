@@ -154,6 +154,8 @@ namespace ucb
                 {
                     mop.kind = MachineOperand::Register;
                     mop.val = std::bit_cast<std::uint64_t>(n->reg());
+                    mop.ty = n->ty();
+                    mop.is_def = true;
                 }
                 else
                 {
@@ -167,16 +169,19 @@ namespace ucb
                     case DagDefKind::DDK_REG:
                         mop.kind = MachineOperand::Register;
                         mop.val = std::bit_cast<std::uint64_t>(on->reg());
+                        mop.ty = on->ty();
                         break;
 
                     case DagDefKind::DDK_MEM:
                         mop.kind = MachineOperand::FrameSlot;
                         mop.val = on->mem_id();
+                        mop.ty = on->ty();
                         break;
 
                     case DagDefKind::DDK_IMM:
                         mop.kind = MachineOperand::Imm;
                         mop.val = on->imm_val();
+                        mop.ty = on->ty();
                         break;
 
                     case DagDefKind::DDK_ADDR:

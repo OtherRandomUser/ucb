@@ -17,6 +17,19 @@ namespace ucb
         {
             run_on_bblock(bblock, debug);
         }
+
+        std::cout << "BATATAS!!!" << std::endl;
+        proc->compute_machine_lifetimes();
+
+        if (debug)
+        {
+            std::cout << "proc \"" << proc->id() << "after instruction selection:\n\n";
+
+            for (auto& bblock: proc->bblocks())
+            {
+                _target->dump_bblock(bblock, std::cout);
+            }
+        }
     }
 
     void DynamicISel::run_on_bblock(BasicBlock& bblock, bool debug)

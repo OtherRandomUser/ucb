@@ -58,6 +58,7 @@ namespace ucb
             if (it == _comp_tys.end())
             {
                 std::cerr << "type not found\n";
+                std::cerr << ty.val << ", " << ty.size << std::endl;
                 abort();
             }
 
