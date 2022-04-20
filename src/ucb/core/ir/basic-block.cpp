@@ -85,27 +85,19 @@ namespace ucb
 
     bool BasicBlock::compute_machine_live_ins()
     {
-        std::cout << "compute machine live ins" << std::endl;
-
         std::vector<std::pair<RegisterID, TypeID>> new_live_ins;
 
         for (auto bblock: _successors)
         {
-            // bblock->compute_machine_live_ins();
-
             new_live_ins.insert(
                 new_live_ins.begin(),
                 bblock->_live_ins.begin(),
                 bblock->_live_ins.end());
         }
 
-        std::cout << "compute machine live ins 2" << std::endl;
-
         for (auto it = _machine_insts.rbegin(); it != _machine_insts.rend(); it++)
         {
             auto& opnds = it->opnds;
-
-            std::cout << "compute machine live ins 2 loop" << std::endl;
 
             for (auto& opnd: opnds)
             {
@@ -132,34 +124,22 @@ namespace ucb
 
                     if (live_in == new_live_ins.end())
                     {
-                        std::cout << "opnd ty: " << opnd.ty.val << ", " << opnd.ty.size << std::endl;
                         new_live_ins.push_back(std::make_pair(reg, opnd.ty));
                     }
                 }
             }
         }
 
-        std::cout << "size: " << new_live_ins.size() << std::endl;
-
-        std::cout << "compute machine live ins 3" << std::endl;
-
         for (auto li: new_live_ins)
         {
             auto it = std::find(_live_ins.begin(), _live_ins.end(), li);
 
-            std::cout << "compute machine live ins 3 loop" << std::endl;
-
             if (it == _live_ins.end())
             {
-                std::cout << "compute machine live ins 3 loop 2" << std::endl;
                 _live_ins = std::move(new_live_ins);
                 return true;
             }
-
-            std::cout << "compute machine live ins 3 loop 3" << std::endl;
         }
-
-        std::cout << "compute machine live ins 4" << std::endl;
 
         return false;
     }

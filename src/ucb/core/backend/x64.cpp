@@ -26,7 +26,7 @@ namespace ucb::x64
                 .reps = {
                     {
                         .ty = T_I32,
-                        .opc = OPC_MOVE,
+                        .opc = OPC_MOVE_RM,
                         .opnds = {-1, 0}
                     }
                 }
@@ -57,7 +57,7 @@ namespace ucb::x64
                 .reps = {
                     {
                         .ty = T_I32,
-                        .opc = OPC_MOVE,
+                        .opc = OPC_MOVE_MR,
                         // .opnds = {-1, 0}
                         .opnds = {0, 1}
                     }
@@ -89,13 +89,57 @@ namespace ucb::x64
                 .reps = {
                     {
                         .ty = T_I32,
-                        .opc = OPC_MOVE,
+                        .opc = OPC_MOVE_RR,
                         .opnds = {-1, 0}
                     },
                     {
                         .ty = T_I32,
-                        .opc = OPC_ADD,
+                        .opc = OPC_ADD_RR,
                         .opnds = {-1, /*0,*/ 1}
+                    }
+                }
+            },
+            // add mem with integer register (1)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_I32,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_I32,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_I32,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_I32,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_I32,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_I32,
+                        .opc = OPC_ADD_RM,
+                        .opnds = {-1, 1}
                     }
                 }
             },
@@ -208,12 +252,28 @@ namespace ucb::x64
                 out << "ret\t";
                 break;
 
-            case OPC_MOVE:
-                out << "mov\t";
+            case OPC_MOVE_RR:
+                out << "mov_rr\t";
                 break;
 
-            case OPC_ADD:
-                out << "add\t";
+            case OPC_MOVE_MR:
+                out << "mov_mr\t";
+                break;
+
+            case OPC_MOVE_RM:
+                out << "mov_rm\t";
+                break;
+
+            case OPC_ADD_RR:
+                out << "add_rr\t";
+                break;
+
+            case OPC_ADD_MR:
+                out << "add_mr\t";
+                break;
+
+            case OPC_ADD_RM:
+                out << "add_rm\t";
                 break;
         }
 

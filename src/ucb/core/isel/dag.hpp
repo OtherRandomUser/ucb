@@ -44,7 +44,7 @@ namespace ucb
         std::uint64_t& imm_val() { return _imm_val; }
         std::uint64_t& mem_id() { return _mem_id; }
         const std::string& id() const { return _id; }
-        float cost() const { return _cost; }
+        float& cost() { return _cost; }
 
         std::vector<std::shared_ptr<DagNode>>& args() { return _args; }
         std::vector<std::shared_ptr<DagNode>>& selected_args() { return _selected_args; }

@@ -8,8 +8,12 @@ namespace ucb::x64
 {
     constexpr MachineOpc OPC_NONE = 0;
     constexpr MachineOpc OPC_RET = 1;
-    constexpr MachineOpc OPC_MOVE = 2;
-    constexpr MachineOpc OPC_ADD = 3;
+    constexpr MachineOpc OPC_MOVE_RR = 2;
+    constexpr MachineOpc OPC_MOVE_MR = 3;
+    constexpr MachineOpc OPC_MOVE_RM = 4;
+    constexpr MachineOpc OPC_ADD_RR = 5;
+    constexpr MachineOpc OPC_ADD_RM = 6;
+    constexpr MachineOpc OPC_ADD_MR = 7;
 
     constexpr RegisterID RAX { PREG_START, 64 };
     constexpr RegisterID RBX { RAX.val + 1, 64 };

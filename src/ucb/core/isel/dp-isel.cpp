@@ -18,12 +18,11 @@ namespace ucb
             run_on_bblock(bblock, debug);
         }
 
-        std::cout << "BATATAS!!!" << std::endl;
         proc->compute_machine_lifetimes();
 
         if (debug)
         {
-            std::cout << "proc \"" << proc->id() << "after instruction selection:\n\n";
+            std::cout << "proc \"" << proc->id() << "\" after instruction selection:\n\n";
 
             for (auto& bblock: proc->bblocks())
             {
@@ -195,11 +194,17 @@ namespace ucb
 
                 for (auto opnd: res.selected_opnds)
                 {
+                    std::cout << "opnd cost: " << opnd->cost() << std::endl;
                     match_cost += opnd->cost();
                 }
 
+                std::cout << "opnd count: " << res.selected_opnds.size() << std::endl;
+                std::cout << "match cost: " << match_cost << std::endl;
+
                 if (match_cost < cost)
                 {
+                    std::cout << "updated match to #" << count << std::endl;
+
                     cost = match_cost;
                     selected = &pat;
                     selected_opnds = std::move(res.selected_opnds);
@@ -214,6 +219,7 @@ namespace ucb
             abort();
         }
 
+        n->cost() = cost;
         n->add_selected_insts(selected->replace(n));
         n->add_selected_args(std::move(selected_opnds));
     }
