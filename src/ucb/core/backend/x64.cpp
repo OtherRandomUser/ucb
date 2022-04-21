@@ -1,5 +1,7 @@
 #include <ucb/core/backend/x64.hpp>
 
+#include <unordered_map>
+
 namespace ucb::x64
 {
     std::vector<Pat> X64Target::load_pats()
@@ -279,11 +281,19 @@ namespace ucb::x64
 
         auto junc = "";
 
+        static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
+            {std::bit_cast<std::uint64_t>(RAX), "RAX"},
+            {std::bit_cast<std::uint64_t>(EAX), "EAX"},
+            {std::bit_cast<std::uint64_t>(RBX), "RBX"},
+            {std::bit_cast<std::uint64_t>(EBX), "EBX"},
+            {std::bit_cast<std::uint64_t>(RCX), "RCX"},
+            {std::bit_cast<std::uint64_t>(ECX), "ECX"}
+        }};
+
         for (auto& opnd: inst.opnds)
         {
             out << junc;
             junc = ", ";
-            auto reg = NO_REG;
 
             switch (opnd.kind)
             {
@@ -291,13 +301,24 @@ namespace ucb::x64
                     out << "imm(" << opnd.val << ")";
                     break;
 
-                case MachineOperand::Register:
-                    reg = std::bit_cast<RegisterID>(opnd.val);
-                    out << "reg({ " << reg.val << ", " << reg.size << " })";
+                case MachineOperand::Register: {
+                    auto it = PHYS_REGS.find(opnd.val);
+
+                    if (it == PHYS_REGS.end())
+                    {
+                        auto reg = std::bit_cast<RegisterID>(opnd.val);
+                        out << "reg({ " << reg.val << ", " << reg.size << " })";
+                    }
+                    else
+                    {
+                        out << it->second;
+                    }
+
                     break;
+                }
 
                 case MachineOperand::FrameSlot:
-                    out << "fs(#" << opnd.val << ")";
+                    out << "fs(#" << std::bit_cast<std::int64_t>(opnd.val) << ")";
                     break;
 
                 case MachineOperand::BBlockAddress:
@@ -307,5 +328,94 @@ namespace ucb::x64
         }
 
         out << "\n";
+    }
+
+    void X64Target::abi_lower(Procedure& proc)
+    {
+        // lower inputs
+
+        auto& params = proc.params();
+        auto& entry = proc.entry();
+
+        auto in_reg = 0;
+        std::int64_t in_slot = -1;
+        auto total_args = params.size();
+
+        // TODO actually check the ABI and add remaining registers
+        std::vector<RegisterID> regs = {RAX, RBX, RCX};
+
+        // lower inputs
+        for (const auto& [reg, vreg]: params)
+        {
+            if (in_reg >= regs.size())
+            {
+                // pass via frame
+                auto ty = vreg.ty();
+                auto& inst = entry.prepend_machine_instr(OPC_MOVE_RM/*, vreg.ty()*/);
+
+                inst.opnds.push_back({
+                    .kind = MachineOperand::Register,
+                    .ty = ty,
+                    .val = std::bit_cast<std::uint64_t>(reg)
+                });
+
+                inst.opnds.push_back({
+                    .kind = MachineOperand::FrameSlot,
+                    .ty = ty,
+                    .val = std::bit_cast<std::uint64_t>(in_slot--)
+                });
+            }
+            else
+            {
+                // pass via register
+                auto ty = vreg.ty();
+                auto& inst = entry.prepend_machine_instr(OPC_MOVE_RR);
+
+                RegisterID p_reg = regs[in_reg++];
+                p_reg.size = ty.size;
+
+                inst.opnds.push_back({
+                    .kind = MachineOperand::Register,
+                    .ty = ty,
+                    .val = std::bit_cast<std::uint64_t>(reg)
+                });
+
+                inst.opnds.push_back({
+                    .kind = MachineOperand::Register,
+                    .ty = ty,
+                    .val = std::bit_cast<std::uint64_t>(p_reg)
+                });
+            }
+        }
+
+        // lower outputs
+        for (auto& bblock: proc.bblocks())
+        {
+            auto& machine_insts = bblock.machine_insts();
+
+            if (machine_insts.back().opc == OPC_RET)
+            {
+                auto out_ret = machine_insts.back().opnds.front();
+                machine_insts.pop_back();
+
+                RegisterID reg = RAX;
+                reg.size = out_ret.ty.size;
+
+                auto& mov = machine_insts.emplace_back(OPC_MOVE_RR);
+                mov.opnds.push_back({
+                    .kind = MachineOperand::Register,
+                    .ty = out_ret.ty,
+                    .val = std::bit_cast<std::uint64_t>(reg)
+                });
+                mov.opnds.push_back(out_ret);
+
+                auto& ret = machine_insts.emplace_back(OPC_RET);
+                ret.opnds.push_back({
+                    .kind = MachineOperand::Register,
+                    .ty = out_ret.ty,
+                    .val = std::bit_cast<std::uint64_t>(reg)
+                });
+            }
+        }
     }
 }

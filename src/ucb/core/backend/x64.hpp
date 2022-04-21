@@ -16,8 +16,13 @@ namespace ucb::x64
     constexpr MachineOpc OPC_ADD_MR = 7;
 
     constexpr RegisterID RAX { PREG_START, 64 };
+    constexpr RegisterID EAX { RAX.val, 32 };
+
     constexpr RegisterID RBX { RAX.val + 1, 64 };
+    constexpr RegisterID EBX { RBX.val, 32 };
+
     constexpr RegisterID RCX { RBX.val + 1, 64 };
+    constexpr RegisterID ECX { RCX.val, 32 };
 
     constexpr RegisterID CALLER_SAVED_REGS[] =
     {
@@ -34,8 +39,8 @@ namespace ucb::x64
     {
     public:
         std::vector<Pat> load_pats() override;
-
         void dump_bblock(BasicBlock& bblock, std::ostream& out) override;
+        void abi_lower(Procedure& proc) override;
 
     private:
         void dump_inst(MachineInstruction& inst, std::ostream& out);

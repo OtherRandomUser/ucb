@@ -18,6 +18,7 @@ namespace ucb
             run_on_bblock(bblock, debug);
         }
 
+        _target->abi_lower(*proc);
         proc->compute_machine_lifetimes();
 
         if (debug)

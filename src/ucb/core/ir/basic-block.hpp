@@ -27,14 +27,28 @@ namespace ucb
         bool compute_machine_live_ins();
         void compute_live_outs();
 
-        Instruction& append_instr(InstrOpcode op, TypeID ty)
+        template<typename ...ARGS>
+        Instruction& append_instr(ARGS... args)
         {
-            return _insts.emplace_back(this, op, ty);
+            return _insts.emplace_back(this, std::forward<ARGS>(args)...);
         }
 
-        Instruction& append_instr(InstrOpcode op, TypeID ty, std::string id)
+        template<typename ...ARGS>
+        Instruction& prepend_instr(ARGS... args)
         {
-            return _insts.emplace_back(this, op, ty, std::move(id));
+            return _insts.emplace_front(this, std::forward<ARGS>(args)...);
+        }
+
+        template<typename ...ARGS>
+        MachineInstruction& append_machine_instr(ARGS... args)
+        {
+            return _machine_insts.emplace_back(std::forward<ARGS>(args)...);
+        }
+
+        template<typename ...ARGS>
+        MachineInstruction& prepend_machine_instr(ARGS... args)
+        {
+            return _machine_insts.emplace_front(std::forward<ARGS>(args)...);
         }
 
         void append_machine_insts(std::list<MachineInstruction> insts)
