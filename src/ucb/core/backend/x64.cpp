@@ -356,7 +356,8 @@ namespace ucb::x64
                 inst.opnds.push_back({
                     .kind = MachineOperand::Register,
                     .ty = ty,
-                    .val = std::bit_cast<std::uint64_t>(reg)
+                    .val = std::bit_cast<std::uint64_t>(reg),
+                    .is_def = true
                 });
 
                 inst.opnds.push_back({
@@ -377,7 +378,8 @@ namespace ucb::x64
                 inst.opnds.push_back({
                     .kind = MachineOperand::Register,
                     .ty = ty,
-                    .val = std::bit_cast<std::uint64_t>(reg)
+                    .val = std::bit_cast<std::uint64_t>(reg),
+                    .is_def = true
                 });
 
                 inst.opnds.push_back({

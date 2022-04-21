@@ -95,12 +95,15 @@ namespace ucb
                 bblock->_live_ins.end());
         }
 
+        std::cout << "loop, count: " << new_live_ins.size() << std::endl;
         for (auto it = _machine_insts.rbegin(); it != _machine_insts.rend(); it++)
         {
+            std::cout << "inst" << std::endl;
             auto& opnds = it->opnds;
 
             for (auto& opnd: opnds)
             {
+                std::cout << "opnd" << std::endl;
                 if (opnd.is_def)
                 {
                     auto reg = std::bit_cast<RegisterID>(opnd.val);
@@ -111,6 +114,7 @@ namespace ucb
 
                     if (it != new_live_ins.end())
                     {
+                        std::cout << "erased 1" << std::endl;
                         new_live_ins.erase(it);
                     }
                 }
@@ -124,6 +128,7 @@ namespace ucb
 
                     if (live_in == new_live_ins.end())
                     {
+                        std::cout << "added 1" << std::endl;
                         new_live_ins.push_back(std::make_pair(reg, opnd.ty));
                     }
                 }
