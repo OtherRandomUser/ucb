@@ -39,6 +39,10 @@ namespace ucb::x64
     {
     public:
         std::vector<Pat> load_pats() override;
+        std::vector<RegisterClass> load_reg_classes() override;
+
+        bool is_rr_move(MachineOpc opc) override;
+
         void dump_bblock(BasicBlock& bblock, std::ostream& out) override;
         void abi_lower(Procedure& proc) override;
 

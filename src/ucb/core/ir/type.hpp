@@ -28,16 +28,19 @@ namespace ucb
 
     constexpr TypeID T_BOOL = { 2, 8 };
 
+    constexpr TypeID T_ANY_U = { 3, 0 };
     constexpr TypeID T_U8 = { 3, 8 };
     constexpr TypeID T_U16 = { 3, 16 };
     constexpr TypeID T_U32 = { 3, 32 };
     constexpr TypeID T_U64 = { 3, 64 };
 
+    constexpr TypeID T_ANY_I = { 4, 0 };
     constexpr TypeID T_I8 = { 4, 8 };
     constexpr TypeID T_I16 = { 4, 16 };
     constexpr TypeID T_I32 = { 4, 32 };
     constexpr TypeID T_I64 = { 4, 64 };
 
+    constexpr TypeID T_ANY_F = { 5, 0 };
     constexpr TypeID T_F32 = { 5, 32 };
     constexpr TypeID T_F64 = { 5, 64 };
 

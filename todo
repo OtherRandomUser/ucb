@@ -6,8 +6,7 @@
     * register allocation api
 * instruction selection pass
     * add multiple use registers to root nodes
-    * relax matching constraints to match types more flexibly (cam be done after the first development pass)
-    * add frame slots
+    * relax matching constraints to match types more flexibly (can be done after the first development pass)
 * register allocation pass
 * code emission
 

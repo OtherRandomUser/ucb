@@ -14,6 +14,9 @@ target_sources(ucb-core
         isel/dp-isel.hpp
         isel/isel.hpp
         isel/pat.hpp
+        regalloc/graph-coloring.hpp
+        regalloc/interference-graph.hpp
+        regalloc/regalloc.hpp
     PRIVATE
         pass-manager.cpp
         target-machine.cpp
@@ -26,6 +29,8 @@ target_sources(ucb-core
         isel/dag.cpp
         isel/dp-isel.cpp
         isel/pat.cpp
+        regalloc/graph-coloring.cpp
+        regalloc/interference-graph.cpp
 )
 
 target_include_directories(ucb-core

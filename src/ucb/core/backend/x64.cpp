@@ -188,6 +188,23 @@ namespace ucb::x64
         };
     }
 
+    std::vector<RegisterClass> X64Target::load_reg_classes()
+    {
+        return std::initializer_list<RegisterClass>
+        {
+            // GPR
+            {
+                .physical_regs = {RAX, RBX, RCX},
+                .tys = {T_ANY_I, T_ANY_U}
+            }
+        };
+    }
+
+    bool X64Target::is_rr_move(MachineOpc opc)
+    {
+        return opc == OPC_MOVE_RR;
+    }
+
     void X64Target::dump_bblock(BasicBlock& bblock, std::ostream& out)
     {
         out << bblock.id() << ":\n";

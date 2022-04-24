@@ -7,13 +7,24 @@
 
 namespace ucb
 {
+    struct RegisterClass
+    {
+        std::vector<RegisterID> physical_regs;
+        std::vector<TypeID> tys;
+    };
+
     class Target
     {
     public:
         virtual ~Target() = default;
 
         virtual std::vector<Pat> load_pats() = 0;
+        virtual std::vector<RegisterClass> load_reg_classes() = 0;
+
+        virtual bool is_rr_move(MachineOpc opc) = 0;
+
         virtual void dump_bblock(BasicBlock& bblock, std::ostream& out) = 0;
         virtual void abi_lower(Procedure& proc) = 0;
+        // emit prologue/epilogue
     };
 }
