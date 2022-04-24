@@ -46,6 +46,11 @@ namespace ucb
     constexpr std::uint64_t PREG_START = 1;
     constexpr std::uint64_t VREG_START = 100;
 
+    inline bool is_physical_reg(RegisterID reg)
+    {
+        return reg.val < VREG_START;
+    }
+
     class VirtualRegister
     {
     public:

@@ -100,7 +100,14 @@ namespace ucb
                 .keys = { key }
             });
 
-            return nodes.back();
+            auto& res = nodes.back();
+
+            if (is_physical_reg(key))
+            {
+                res.physical_register = key;
+            }
+
+            return res;
         }
         else
         {
@@ -159,7 +166,6 @@ namespace ucb
                         }
                     }
                 }
-
 
                 // add interferences
                 for (auto& opnd: it->opnds)
