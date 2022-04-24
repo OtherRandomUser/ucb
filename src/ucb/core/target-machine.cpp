@@ -7,6 +7,7 @@ namespace ucb
         for(auto& proc: unit->procs())
         {
             _isel->run_on_procedure(proc, true);
+            _regalloc->run_on_procedure(proc, true);
         }
     }
 }

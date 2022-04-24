@@ -5,6 +5,7 @@
 #include <ucb/core/pass-manager.hpp>
 #include <ucb/core/backend/x64.hpp>
 #include <ucb/core/isel/dp-isel.hpp>
+#include <ucb/core/regalloc/graph-coloring.hpp>
 #include <ucb/frontend/lexer.hpp>
 #include <ucb/frontend/parser.hpp>
 
@@ -20,7 +21,8 @@ std::unique_ptr<PassManager> make_pass_manager()
     auto target = std::make_shared<x64::X64Target>();
 
     auto isel = std::make_unique<DynamicISel>(target);
-    auto target_machine = std::make_unique<TargetMachine>(TargetArch::ARCH_X64, std::move(isel));
+    auto regalloc = std::make_unique<GraphColoringRegAlloc>(target);
+    auto target_machine = std::make_unique<TargetMachine>(TargetArch::ARCH_X64, std::move(isel), std::move(regalloc));
     return std::make_unique<PassManager>(std::move(passes), std::move(target_machine));
 }
 

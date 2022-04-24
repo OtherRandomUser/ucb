@@ -29,6 +29,11 @@ namespace ucb
 
         bool operator != (const RegisterID& other) const = default;
         bool operator == (const RegisterID& other) const = default;
+
+        bool operator < (const RegisterID& other) const { return val < other.val; }
+        bool operator <= (const RegisterID& other) const { return val <= other.val; }
+        bool operator > (const RegisterID& other) const { return val > other.val; }
+        bool operator >= (const RegisterID& other) const { return val >= other.val; }
     };
 
     inline std::ostream& operator << (std::ostream& os, const RegisterID rid)

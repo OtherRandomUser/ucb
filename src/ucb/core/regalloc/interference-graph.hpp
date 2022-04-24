@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <optional>
 
 #include <ucb/core/target.hpp>
@@ -11,16 +12,17 @@ namespace ucb
 {
     struct IGNode
     {
-        std::vector<RegisterID> keys;
-        std::vector<RegisterID> interferences;
-        std::vector<MachineInstruction*> moves;
+        std::set<RegisterID> keys;
+        std::set<RegisterID> interferences;
+        std::set<MachineInstruction*> moves;
 
         RegisterID physical_register{NO_REG};
 
         bool no_spill{false};
 
         bool interferes_with(const IGNode& other);
-        void add_move(MachineInstruction *move);
+
+        void dump();
     };
 
     struct InterferenceGraph
@@ -31,6 +33,8 @@ namespace ucb
         void add_interference(RegisterID a, RegisterID b);
 
         IGNode& get(RegisterID key);
+
+        void dump();
 
         // void merge(RegisterID a, RegisterID b);
         // void clean_dead_nodes();

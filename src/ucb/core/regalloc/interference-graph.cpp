@@ -17,10 +17,34 @@ namespace ucb
         return false;
     }
 
-    void IGNode::add_move(MachineInstruction *move)
+    void IGNode::dump()
     {
-        auto it = std::find(moves.begin(), moves.end(), move);
-        if (it == moves.end()) { moves.push_back(move); }
+        std::cout << "keys: { ";
+        std::string junc = "";
+
+        for (auto key: keys)
+        {
+            std::cout << junc << key.val;
+            junc = ", ";
+        }
+
+        std::cout << " }, interferences: { ";
+        junc = "";
+
+        for (auto interference: interferences)
+        {
+            std::cout << junc << interference.val;
+            junc = ", ";
+        }
+
+        std::cout << " }, is move ajacent: " << (moves.empty() ? "false" : "true");
+
+        if (physical_register != NO_REG)
+        {
+            std::cout << ", physical reg: " << physical_register.val;
+        }
+
+        std::cout << std::endl;
     }
 
     bool InterferenceGraph::is_interference(RegisterID a, RegisterID b)
@@ -55,20 +79,10 @@ namespace ucb
         if (a != b && !is_interference(a, b))
         {
             auto node_a = get(a);
-            auto a_it = std::find(node_a.interferences.begin(), node_a.interferences.end(), b);
-
-            if (a_it == node_a.interferences.end())
-            {
-                node_a.interferences.push_back(b);
-            }
+            node_a.interferences.insert(b);
 
             auto node_b = get(b);
-            auto b_it = std::find(node_b.interferences.begin(), node_b.interferences.end(), a);
-
-            if (b_it == node_b.interferences.end())
-            {
-                node_b.interferences.push_back(a);
-            }
+            node_b.interferences.insert(a);
         }
     }
 
@@ -172,7 +186,7 @@ namespace ucb
                         {
                             auto key = std::bit_cast<RegisterID>(opnd.val);
                             auto& node = res.get(key);
-                            node.add_move(move_inst);
+                            node.moves.insert(move_inst);
                         }
                     }
                 }
@@ -180,5 +194,15 @@ namespace ucb
         }
 
         return res;
+    }
+
+    void InterferenceGraph::dump()
+    {
+        for (auto& node: nodes)
+        {
+            node.dump();
+        }
+
+        std::cout << std::endl;
     }
 }
