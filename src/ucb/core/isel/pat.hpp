@@ -38,6 +38,8 @@ namespace ucb
         MachineOpc opc;
         std::vector<std::int8_t> opnds;
 
+        bool def_is_also_use{false};
+
         //std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
     };
 

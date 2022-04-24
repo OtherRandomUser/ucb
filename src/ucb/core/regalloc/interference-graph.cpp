@@ -78,10 +78,11 @@ namespace ucb
     {
         if (a != b && !is_interference(a, b))
         {
-            auto node_a = get(a);
+            std::cout << "add interference " << a.val << " and " << b.val << std::endl;
+            auto& node_a = get(a);
             node_a.interferences.insert(b);
 
-            auto node_b = get(b);
+            auto& node_b = get(b);
             node_b.interferences.insert(a);
         }
     }
@@ -119,10 +120,14 @@ namespace ucb
     {
         InterferenceGraph res;
 
+        std::cout << "building interference graph:" << std::endl;
+
         for (auto& bblock: proc.bblocks())
         {
-            std::vector<RegisterID> live_regs;
+            std::cout << "bblock" << std::endl;
+            std::set<RegisterID> live_regs;
 
+            std::cout << "adding live outs" << std::endl;
             for (auto pair: bblock.live_outs())
             {
                 auto it = std::find_if(
@@ -132,38 +137,40 @@ namespace ucb
 
                 if (it != tys.end())
                 {
-                    live_regs.push_back(pair.first);
+                    std::cout << "added reg " << pair.first.val << " from live outs" << std::endl;
+                    live_regs.insert(pair.first);
                 }
             }
 
             auto& insts = bblock.machine_insts();
 
+            std::cout << "instructions:" << std::endl;
             for (auto it = insts.rbegin(); it != insts.rend(); it++)
             {
+                std::cout << "inst" << std::endl;
                 // add/remove live regs
                 for (auto& opnd: it->opnds)
                 {
-                    if (opnd.is_def)
+                    std::cout << "opnd is def = " << opnd.is_def << " & is use = " << opnd.is_use << std::endl;
+                    if (opnd.is_def && !opnd.is_use)
                     {
                         // remove def from live regs
                         auto reg = std::bit_cast<RegisterID>(opnd.val);
-                        auto it = std::find(live_regs.begin(), live_regs.end(), reg);
-
-                        if (it != live_regs.end())
-                        {
-                            live_regs.erase(it);
-                        }
+                        live_regs.erase(reg);
+                        std::cout << "remove live reg " << reg.val << std::endl;
+                        std::cout << "live regs:";
+                        for (auto lr: live_regs) { std::cout << " " << lr.val; }
+                        std::cout << std::endl;
                     }
                     else if (opnd.kind == MachineOperand::Register)
                     {
                         // add use to live regs
                         auto reg = std::bit_cast<RegisterID>(opnd.val);
-                        auto it = std::find(live_regs.begin(), live_regs.end(), reg);
-
-                        if (it == live_regs.end())
-                        {
-                            live_regs.push_back(reg);
-                        }
+                        live_regs.insert(reg);
+                        std::cout << "add live reg " << reg.val << std::endl;
+                        std::cout << "live regs:";
+                        for (auto lr: live_regs) { std::cout << " " << lr.val; }
+                        std::cout << std::endl;
                     }
                 }
 

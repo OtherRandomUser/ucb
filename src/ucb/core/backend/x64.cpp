@@ -97,7 +97,8 @@ namespace ucb::x64
                     {
                         .ty = T_I32,
                         .opc = OPC_ADD_RR,
-                        .opnds = {-1, /*0,*/ 1}
+                        .opnds = {-1, /*0,*/ 1},
+                        .def_is_also_use = true
                     }
                 }
             },
@@ -141,7 +142,8 @@ namespace ucb::x64
                     {
                         .ty = T_I32,
                         .opc = OPC_ADD_RM,
-                        .opnds = {-1, 1}
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
                     }
                 }
             },
@@ -170,20 +172,6 @@ namespace ucb::x64
                         .opnds = {0}
                     }
                 }
-                /*
-                .reps = {
-                    {
-                        .ty = T_I32,
-                        .opc = OPC_MOVE,
-                        .opnds = {EAX, 0}
-                    },
-                    {
-                        .ty = T_I32,
-                        .opc = OPC_RET,
-                        .opnds = {EAX}
-                    }
-                }
-                */
             }
         };
     }
@@ -374,7 +362,8 @@ namespace ucb::x64
                     .kind = MachineOperand::Register,
                     .ty = ty,
                     .val = std::bit_cast<std::uint64_t>(reg),
-                    .is_def = true
+                    .is_def = true,
+                    .is_use = false
                 });
 
                 inst.opnds.push_back({
@@ -396,7 +385,8 @@ namespace ucb::x64
                     .kind = MachineOperand::Register,
                     .ty = ty,
                     .val = std::bit_cast<std::uint64_t>(reg),
-                    .is_def = true
+                    .is_def = true,
+                    .is_use = false
                 });
 
                 inst.opnds.push_back({
@@ -424,7 +414,9 @@ namespace ucb::x64
                 mov.opnds.push_back({
                     .kind = MachineOperand::Register,
                     .ty = out_ret.ty,
-                    .val = std::bit_cast<std::uint64_t>(reg)
+                    .val = std::bit_cast<std::uint64_t>(reg),
+                    .is_def = true,
+                    .is_use = false
                 });
                 mov.opnds.push_back(out_ret);
 

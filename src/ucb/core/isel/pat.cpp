@@ -156,6 +156,7 @@ namespace ucb
                     mop.val = std::bit_cast<std::uint64_t>(n->reg());
                     mop.ty = n->ty();
                     mop.is_def = true;
+                    mop.is_use = r.def_is_also_use;
                 }
                 else
                 {

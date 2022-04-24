@@ -22,7 +22,9 @@ namespace ucb
 
         TypeID ty;
         std::uint64_t val;
+
         bool is_def{false};
+        bool is_use{true};
     };
 
     struct MachineInstruction
