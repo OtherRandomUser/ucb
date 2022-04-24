@@ -13,13 +13,14 @@ namespace ucb
     {
         std::vector<RegisterID> keys;
         std::vector<RegisterID> interferences;
+        std::vector<MachineInstruction*> moves;
 
         RegisterID physical_register{NO_REG};
 
         bool no_spill{false};
-        bool is_move_adjacent{false};
 
         bool interferes_with(const IGNode& other);
+        void add_move(MachineInstruction *move);
     };
 
     struct InterferenceGraph
@@ -27,9 +28,10 @@ namespace ucb
         std::vector<IGNode> nodes;
 
         bool is_interference(RegisterID a, RegisterID b);
-        void add_interference(RegisterID a, RegisterID b, bool is_rr_move);
+        void add_interference(RegisterID a, RegisterID b);
 
-        // IGNode& get(RegisterID);
+        IGNode& get(RegisterID key);
+
         // void merge(RegisterID a, RegisterID b);
         // void clean_dead_nodes();
     };
