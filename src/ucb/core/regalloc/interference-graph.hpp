@@ -34,6 +34,10 @@ namespace ucb
 
         IGNode& get(RegisterID key);
 
+        bool empty();
+        bool can_simplify();
+        std::optional<IGNode> pop_node(int k);
+
         void dump();
 
         // void merge(RegisterID a, RegisterID b);

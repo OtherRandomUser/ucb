@@ -19,7 +19,7 @@ namespace ucb
 
     void IGNode::dump()
     {
-        std::cout << "keys: { ";
+        std::cout << "\tkeys: { ";
         std::string junc = "";
 
         for (auto key: keys)
@@ -113,6 +113,73 @@ namespace ucb
         else
         {
             return *node;
+        }
+    }
+
+    bool InterferenceGraph::empty()
+    {
+        return nodes.empty();
+    }
+
+    bool InterferenceGraph::can_simplify()
+    {
+        if (nodes.empty()) { return false; }
+
+        auto it = std::find_if(
+            nodes.begin(),
+            nodes.end(),
+            [](auto& n){ return n.moves.empty(); });
+
+        return it != nodes.end();
+    }
+
+    std::optional<IGNode> InterferenceGraph::pop_node(int k)
+    {
+        if (nodes.empty())
+            return std::nullopt;
+
+        auto it = nodes.begin();
+        auto selected = nodes.end();
+        auto degree = -1;
+
+        while (it != nodes.end())
+        {
+            auto it_degree = it->interferences.size();
+
+            if (it_degree > degree
+                && it_degree < k
+                && it->moves.empty())
+            {
+                selected = it;
+                degree = it_degree;
+            }
+
+            ++it;
+        }
+        
+        if (selected == nodes.end())
+        {
+            return std::nullopt;
+        }
+        else
+        {
+            it = nodes.begin();
+
+            while (it != nodes.end())
+            {
+                if (it == selected) { continue; }
+
+                for (auto key: selected->keys)
+                {
+                    it->interferences.erase(key);
+                }
+
+                ++it;
+            }
+
+            auto opt = std::optional<IGNode>{*selected};
+            nodes.erase(selected);
+            return opt;
         }
     }
 
