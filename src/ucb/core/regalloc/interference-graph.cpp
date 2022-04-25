@@ -120,7 +120,7 @@ namespace ucb
     {
         return nodes.empty();
     }
-
+/*
     bool InterferenceGraph::can_simplify()
     {
         if (nodes.empty()) { return false; }
@@ -133,6 +133,129 @@ namespace ucb
         return it != nodes.end();
     }
 
+    bool InterferenceGraph::can_coalesce()
+    {
+        if (nodes.empty()) { return false; }
+
+        auto it = std::find_if(
+            nodes.begin(),
+            nodes.end(),
+            [](auto& n){ return n.moves.empty(); });
+
+        return it == nodes.end();
+    }
+*/
+    MachineInstruction* InterferenceGraph::coalesce(int k)
+    {
+        if (nodes.empty()) { return nullptr; }
+
+        auto it = nodes.begin();
+
+        while (it != nodes.end())
+        {
+            if (!it->moves.empty())
+            {
+                for (auto mv: it->moves)
+                {
+                    auto itb = std::find_if(
+                        it + 1,
+                        nodes.end(),
+                        [mv](auto& n)
+                        {
+                            //auto itc = std::find(n.moves.begin(), n.moves.end(), mv);
+                            //return itc != n.moves.end();
+                            return n.moves.contains(mv);
+                        });
+
+                    if (itb == nodes.end())
+                    {
+                        std::cerr << "reference to move instruction appears only once" << std::endl;
+                        abort();
+                    }
+
+                    // if the two registers interfere with each other we will never be able to merge them
+                    if (it->interferes_with(*itb))
+                    {
+                        it->moves.erase(mv);
+                        itb->moves.erase(mv);
+                        continue;
+                    }
+
+                    // check if both nodes are already colored
+                    if (it->physical_register != NO_REG
+                        && itb->physical_register != NO_REG)
+                    {
+                        it->moves.erase(mv);
+                        itb->moves.erase(mv);
+                        continue;
+                    }
+
+                    // briggs
+                    if (it->interferences.size() < k
+                        && itb->interferences.size() < k)
+                    {
+                        // merge the two nodes
+                        it->keys.merge(std::move(itb->keys));
+                        it->interferences.merge(std::move(itb->interferences));
+                        it->moves.merge(std::move(itb->moves));
+                        it->moves.erase(mv);
+
+                        if (itb->physical_register != NO_REG)
+                        {
+                            it->physical_register = itb->physical_register;
+                        }
+
+                        nodes.erase(itb);
+                        return mv;
+                    }
+                }
+            }
+
+            ++it;
+        }
+
+        return nullptr;
+    }
+
+    bool InterferenceGraph::freeze_move()
+    {
+        if (nodes.empty()) { return false; }
+
+        auto it = nodes.begin();
+
+        while (it != nodes.end())
+        {
+            if (!it->moves.empty())
+            {
+                for (auto mv: it->moves)
+                {
+                    auto itb = std::find_if(
+                        it + 1,
+                        nodes.end(),
+                        [mv](auto& n)
+                        {
+                            //auto itc = std::find(n.moves.begin(), n.moves.end(), mv);
+                            //return itc != n.moves.end();
+                            return n.moves.contains(mv);
+                        });
+
+                    if (itb == nodes.end())
+                    {
+                        std::cerr << "reference to move instruction appears only once" << std::endl;
+                        abort();
+                    }
+
+                    it->moves.erase(mv);
+                    itb->moves.erase(mv);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // TODO select colored nodes last
     std::optional<IGNode> InterferenceGraph::pop_node(int k)
     {
         if (nodes.empty())
@@ -181,6 +304,11 @@ namespace ucb
             nodes.erase(selected);
             return opt;
         }
+    }
+
+    std::optional<IGNode> InterferenceGraph::pop_highest_degree()
+    {
+        return pop_node(10000);
     }
 
     InterferenceGraph build_interference_graph(Procedure& proc, const std::vector<TypeID>& tys, std::shared_ptr<Target> target)

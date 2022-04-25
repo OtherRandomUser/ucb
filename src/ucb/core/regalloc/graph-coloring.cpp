@@ -34,35 +34,52 @@ namespace  ucb
                 while (!ig.empty())
                 {
                     // simplify
-                    while (ig.can_simplify())
+                    while (true)
                     {
                         auto n = ig.pop_node(k);
 
-                        if (!n.has_value())
+                        if (n.has_value())
                         {
-                            break;
+                            stack.push_back(std::move(n.value()));
                         }
                         else
                         {
-                            stack.push_back(std::move(n.value()));
+                            break;
                         }
                     }
 
                     // coalesce
-                    if (ig.can_coalesce)
+                    auto mv_ptr = ig.coalesce(k);
+
+                    if (mv_ptr != nullptr)
                     {
-                        while (ig.coalesce(k));
+                        for (auto& bblock: proc->bblocks())
+                        {
+                            auto& insts = bblock.machine_insts();
+                            auto it = std::find_if(
+                                insts.begin(),
+                                insts.end(),
+                                [mv_ptr](auto& inst)
+                                {
+                                    return &inst == mv_ptr;
+                                });
+
+                            if (it != insts.end())
+                            {
+                                insts.erase(it);
+                                break;
+                            }
+                        }
                     }
                     // freeze
-                    else if (ig.can_freeze())
+                    else if (!ig.freeze_move())
                     {
-                        ig.freeze();
-                    }
-                    // potential spill
-                    else
-                    {
-                        auto n = ig.pop_highest_degree();
-                        stack.push_back(std::move(n));
+                        // potential spill
+                        if (!ig.empty() && !ig.can_simplify())
+                        {
+                            auto n = ig.pop_highest_degree();
+                            stack.push_back(std::move(n.value()));
+                        }
                     }
                 }
 

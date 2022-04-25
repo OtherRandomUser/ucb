@@ -36,7 +36,12 @@ namespace ucb
 
         bool empty();
         bool can_simplify();
+        // bool can_coalesce();
+
+        MachineInstruction* coalesce(int k);
+        bool freeze_move();
         std::optional<IGNode> pop_node(int k);
+        std::optional<IGNode> pop_highest_degree();
 
         void dump();
 
