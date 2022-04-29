@@ -130,19 +130,53 @@ namespace  ucb
                         spills.push_back(*n.keys.begin());
                     }
 
-                    ig.push(std::move(n));
+                    ig.push_node(std::move(n));
                 }
 
                 // successful selection for all instructions
                 if (spills.empty())
                 {
-                    select_registers(proc, ig);
+                    select_registers(*proc, ig);
                     break;
                 }
                 // handle spills and try again
                 else
                 {
-                    handle_spills(proc, spills);
+                    std::cerr << "spills are not implemented yet" << std::endl;
+                    abort();
+                    // handle_spills(proc, spills);
+                }
+            }
+        }
+
+        if (debug)
+        {
+            std::cout << "procedure " << proc->id() << " after register allocation\n\n";
+
+            for (auto& bblock: proc->bblocks())
+            {
+                _target->dump_bblock(bblock, std::cout);
+            }
+        }
+    }
+
+    void GraphColoringRegAlloc::select_registers(Procedure& proc, InterferenceGraph& ig)
+    {
+        for (auto& bblock: proc.bblocks())
+        {
+            for (auto& inst: bblock.machine_insts())
+            {
+                for (auto& opnd: inst.opnds)
+                {
+                    if (opnd.kind != MachineOperand::Register) { continue; }
+
+                    auto reg = std::bit_cast<RegisterID>(opnd.val);
+
+                    if (!is_physical_reg(reg))
+                    {
+                        auto p = ig.get(reg).physical_register;
+                        opnd.val = std::bit_cast<std::uint64_t>(p);
+                    }
                 }
             }
         }

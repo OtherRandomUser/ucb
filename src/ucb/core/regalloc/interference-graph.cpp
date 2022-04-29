@@ -120,7 +120,7 @@ namespace ucb
     {
         return nodes.empty();
     }
-/*
+
     bool InterferenceGraph::can_simplify()
     {
         if (nodes.empty()) { return false; }
@@ -132,7 +132,7 @@ namespace ucb
 
         return it != nodes.end();
     }
-
+/*
     bool InterferenceGraph::can_coalesce()
     {
         if (nodes.empty()) { return false; }
@@ -309,6 +309,27 @@ namespace ucb
     std::optional<IGNode> InterferenceGraph::pop_highest_degree()
     {
         return pop_node(10000);
+    }
+
+    void InterferenceGraph::push_node(IGNode node)
+    {
+        nodes.push_back(node);
+
+        for (auto reg: node.interferences)
+        {
+            auto it = std::find_if(nodes.begin(), nodes.end(), [&](auto& n){ return n.keys.contains(reg); });
+
+            if (it == nodes.end())
+            {
+                std::cerr << "interference missing" << std::endl;
+                abort();
+            }
+
+            for (auto key: node.keys)
+            {
+                it->interferences.insert(key);
+            }
+        }
     }
 
     InterferenceGraph build_interference_graph(Procedure& proc, const std::vector<TypeID>& tys, std::shared_ptr<Target> target)

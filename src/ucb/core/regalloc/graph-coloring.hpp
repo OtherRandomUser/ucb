@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ucb/core/target.hpp>
+#include <ucb/core/regalloc/interference-graph.hpp>
 #include <ucb/core/regalloc/regalloc.hpp>
 
 namespace  ucb
@@ -17,5 +18,7 @@ namespace  ucb
 
     private:
         std::shared_ptr<Target> _target;
+
+        void select_registers(Procedure& proc, InterferenceGraph& ig);
     };
 }

@@ -42,6 +42,7 @@ namespace ucb
         bool freeze_move();
         std::optional<IGNode> pop_node(int k);
         std::optional<IGNode> pop_highest_degree();
+        void push_node(IGNode node);
 
         void dump();
 
