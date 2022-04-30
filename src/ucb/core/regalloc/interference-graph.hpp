@@ -33,6 +33,9 @@ namespace ucb
         void add_interference(RegisterID a, RegisterID b);
 
         IGNode& get(RegisterID key);
+        int get_neighbor_count(IGNode& node, int k);
+
+        bool briggs(IGNode& a, IGNode& b, int k);
 
         bool empty();
         bool can_simplify();

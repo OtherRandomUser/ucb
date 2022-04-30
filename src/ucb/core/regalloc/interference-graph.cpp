@@ -37,7 +37,14 @@ namespace ucb
             junc = ", ";
         }
 
-        std::cout << " }, is move ajacent: " << (moves.empty() ? "false" : "true");
+        std::cout << " }, moves: ";
+        junc = "";
+
+        for (auto mv: moves)
+        {
+            std::cout << junc << mv;
+            junc = ", ";
+        }
 
         if (physical_register != NO_REG)
         {
@@ -116,6 +123,52 @@ namespace ucb
         }
     }
 
+    int InterferenceGraph::get_neighbor_count(IGNode& node, int k)
+    {
+        std::set<IGNode*> neighbors;
+
+        for (auto key: node.interferences)
+        {
+            auto& i = get(key);
+
+            if (i.interferences.size() >= k && !neighbors.contains(&i))
+            {
+                neighbors.insert(&i);
+            }
+        }
+
+        return neighbors.size();
+    }
+
+    bool InterferenceGraph::briggs(IGNode& a, IGNode& b, int k)
+    {
+        std::set<IGNode*> neighbors;
+
+        if (a.interferes_with(b)) { return false; }
+
+        for (auto key: a.interferences)
+        {
+            auto& i = get(key);
+
+            if (i.interferences.size() >= k && !neighbors.contains(&i))
+            {
+                neighbors.insert(&i);
+            }
+        }
+
+        for (auto key: b.interferences)
+        {
+            auto& i = get(key);
+
+            if (i.interferences.size() >= k && !neighbors.contains(&i))
+            {
+                neighbors.insert(&i);
+            }
+        }
+
+        return neighbors.size() < k;
+    }
+
     bool InterferenceGraph::empty()
     {
         return nodes.empty();
@@ -157,6 +210,7 @@ namespace ucb
             {
                 for (auto mv: it->moves)
                 {
+                    // TODO will crash when a node is skipped
                     auto itb = std::find_if(
                         it + 1,
                         nodes.end(),
@@ -190,15 +244,35 @@ namespace ucb
                         continue;
                     }
 
-                    // briggs
-                    if (it->interferences.size() < k
-                        && itb->interferences.size() < k)
+                    if (briggs(*it, *itb, k))
                     {
                         // merge the two nodes
                         it->keys.merge(std::move(itb->keys));
                         it->interferences.merge(std::move(itb->interferences));
+
+                        // remove any common moves
+                        auto m = it->moves.begin();
+                        while (m != it->moves.end())
+                        {
+                            if (itb->moves.contains(*m))
+                            {
+                                itb->moves.erase(*m);
+                                m = it->moves.erase(m);
+                            }
+                            else
+                            {
+                                ++m;
+                            }
+                        }
+
+                        // must be after removing common moves
                         it->moves.merge(std::move(itb->moves));
-                        it->moves.erase(mv);
+
+                        std::cout << "moves size: " << it->moves.size() << std::endl;
+                        if (it->moves.contains(nullptr))
+                        {
+                            std::cout << "NULL" << std::endl;
+                        }
 
                         if (itb->physical_register != NO_REG)
                         {
@@ -267,7 +341,7 @@ namespace ucb
 
         while (it != nodes.end())
         {
-            auto it_degree = it->interferences.size();
+            int it_degree = it->interferences.size();
 
             if (it_degree > degree
                 && it_degree < k
@@ -290,11 +364,12 @@ namespace ucb
 
             while (it != nodes.end())
             {
-                if (it == selected) { continue; }
-
-                for (auto key: selected->keys)
+                if (it != selected)
                 {
-                    it->interferences.erase(key);
+                    for (auto key: selected->keys)
+                    {
+                        it->interferences.erase(key);
+                    }
                 }
 
                 ++it;

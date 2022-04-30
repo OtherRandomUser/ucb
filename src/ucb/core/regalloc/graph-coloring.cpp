@@ -36,10 +36,13 @@ namespace  ucb
                     // simplify
                     while (true)
                     {
+                        std::cout << "simplify" << std::endl;
                         auto n = ig.pop_node(k);
 
                         if (n.has_value())
                         {
+                            std::cout << "popped node:" << std::endl;
+                            ig.dump();
                             stack.push_back(std::move(n.value()));
                         }
                         else
@@ -53,6 +56,9 @@ namespace  ucb
 
                     if (mv_ptr != nullptr)
                     {
+                        std::cout << "coalesced:" << std::endl;
+                        ig.dump();
+
                         for (auto& bblock: proc->bblocks())
                         {
                             auto& insts = bblock.machine_insts();
@@ -66,22 +72,30 @@ namespace  ucb
 
                             if (it != insts.end())
                             {
+
+                                std::cout << "found move" << std::endl;
                                 insts.erase(it);
                                 break;
                             }
+
+                            std::cout << "end of move remove loop" << std::endl;
                         }
                     }
                     // freeze
                     else if (!ig.freeze_move())
                     {
+                        std::cout << "potential spill?" << std::endl;
                         // potential spill
                         if (!ig.empty() && !ig.can_simplify())
                         {
+                            std::cout << "potential spill!" << std::endl;
                             auto n = ig.pop_highest_degree();
                             stack.push_back(std::move(n.value()));
                         }
                     }
                 }
+
+                std::cout << "select phase" << std::endl;
 
                 // select
                 while (!stack.empty())
