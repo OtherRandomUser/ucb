@@ -23,6 +23,7 @@ namespace ucb
 
         virtual bool is_rr_move(MachineOpc opc) = 0;
 
+        virtual void dump_proc(Procedure& proc, std::ostream& out) = 0;
         virtual void dump_bblock(BasicBlock& bblock, std::ostream& out) = 0;
         virtual void abi_lower(Procedure& proc) = 0;
         // emit prologue/epilogue

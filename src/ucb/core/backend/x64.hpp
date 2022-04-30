@@ -43,6 +43,7 @@ namespace ucb::x64
 
         bool is_rr_move(MachineOpc opc) override;
 
+        void dump_proc(Procedure& proc, std::ostream& out) override;
         void dump_bblock(BasicBlock& bblock, std::ostream& out) override;
         void abi_lower(Procedure& proc) override;
 

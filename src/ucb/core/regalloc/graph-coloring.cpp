@@ -52,33 +52,35 @@ namespace  ucb
                     }
 
                     // coalesce
-                    auto mv_ptr = ig.coalesce(k);
+                    auto mvs = ig.coalesce(k);
 
-                    if (mv_ptr != nullptr)
+                    if (!mvs.empty())
                     {
-                        std::cout << "coalesced:" << std::endl;
+                        std::cout << "coalesced removing " << mvs.size() << " moves:" << std::endl;
                         ig.dump();
 
-                        for (auto& bblock: proc->bblocks())
+                        for (auto ptr: mvs)
                         {
-                            auto& insts = bblock.machine_insts();
-                            auto it = std::find_if(
-                                insts.begin(),
-                                insts.end(),
-                                [mv_ptr](auto& inst)
-                                {
-                                    return &inst == mv_ptr;
-                                });
-
-                            if (it != insts.end())
+                            for (auto& bblock: proc->bblocks())
                             {
+                                auto& insts = bblock.machine_insts();
+                                auto it = std::find_if(
+                                    insts.begin(),
+                                    insts.end(),
+                                    [ptr](auto& inst)
+                                    {
+                                        return &inst == ptr;
+                                    });
 
-                                std::cout << "found move" << std::endl;
-                                insts.erase(it);
-                                break;
+                                if (it != insts.end())
+                                {
+                                    insts.erase(it);
+                                    break;
+                                }
                             }
 
-                            std::cout << "end of move remove loop" << std::endl;
+                            std::cout << "proc after removeing moves:\n";
+                            _target->dump_proc(*proc, std::cout);
                         }
                     }
                     // freeze

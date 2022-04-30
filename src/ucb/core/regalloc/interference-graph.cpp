@@ -198,9 +198,10 @@ namespace ucb
         return it == nodes.end();
     }
 */
-    MachineInstruction* InterferenceGraph::coalesce(int k)
+    std::set<MachineInstruction*> InterferenceGraph::coalesce(int k)
     {
-        if (nodes.empty()) { return nullptr; }
+        std::set<MachineInstruction*> res;
+        if (nodes.empty()) { return res; }
 
         auto it = nodes.begin();
 
@@ -256,6 +257,7 @@ namespace ucb
                         {
                             if (itb->moves.contains(*m))
                             {
+                                res.insert(*m);
                                 itb->moves.erase(*m);
                                 m = it->moves.erase(m);
                             }
@@ -268,19 +270,13 @@ namespace ucb
                         // must be after removing common moves
                         it->moves.merge(std::move(itb->moves));
 
-                        std::cout << "moves size: " << it->moves.size() << std::endl;
-                        if (it->moves.contains(nullptr))
-                        {
-                            std::cout << "NULL" << std::endl;
-                        }
-
                         if (itb->physical_register != NO_REG)
                         {
                             it->physical_register = itb->physical_register;
                         }
 
                         nodes.erase(itb);
-                        return mv;
+                        return res;
                     }
                 }
             }
@@ -288,7 +284,7 @@ namespace ucb
             ++it;
         }
 
-        return nullptr;
+        return res;
     }
 
     bool InterferenceGraph::freeze_move()

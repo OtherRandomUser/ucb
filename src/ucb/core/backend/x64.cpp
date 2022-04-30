@@ -193,6 +193,21 @@ namespace ucb::x64
         return opc == OPC_MOVE_RR;
     }
 
+    void X64Target::dump_proc(Procedure& proc, std::ostream& out)
+    {
+        proc.context()->dump_ty(out, proc.signature().ret());
+        out << " @" << proc.id();
+
+        out << "\n{\n";
+
+        for (auto& bblock: proc.bblocks())
+        {
+            dump_bblock(bblock, out);
+        }
+
+        out << "}\n";
+    }
+
     void X64Target::dump_bblock(BasicBlock& bblock, std::ostream& out)
     {
         out << bblock.id() << ":\n";
