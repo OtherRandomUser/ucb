@@ -105,25 +105,33 @@ namespace  ucb
 
                     auto phys_reg = NO_REG;
 
-                    for (auto reg: reg_class.physical_regs)
+                    if (n.physical_register != NO_REG)
                     {
-                        auto is_selected = false;
-
-                        for (auto i: n.interferences)
+                        phys_reg = n.physical_register;
+                    }
+                    else
+                    {
+                        for (auto reg: reg_class.physical_regs)
                         {
-                            auto& in = ig.get(i);
+                            auto is_selected = false;
 
-                            if (in.physical_register == reg)
+                            for (auto i: n.interferences)
                             {
-                                is_selected = true;
+                                auto& in = ig.get(i);
+
+                                if (in.physical_register == reg)
+                                {
+                                    is_selected = true;
+                                    break;
+                                }
+                            }
+
+                            if (!is_selected)
+                            {
+                                phys_reg = reg;
+                                phys_reg.size = n.keys.begin()->size;
                                 break;
                             }
-                        }
-
-                        if (!is_selected)
-                        {
-                            phys_reg = reg;
-                            break;
                         }
                     }
 
@@ -146,6 +154,9 @@ namespace  ucb
 
                     ig.push_node(std::move(n));
                 }
+
+                std::cout << "ig after selection:\n";
+                ig.dump();
 
                 // successful selection for all instructions
                 if (spills.empty())
