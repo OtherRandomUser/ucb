@@ -1,5 +1,6 @@
 #include <ucb/core/backend/x64.hpp>
 
+#include <set>
 #include <unordered_map>
 
 namespace ucb::x64
@@ -297,11 +298,37 @@ namespace ucb::x64
             case OPC_ADD_RM:
                 out << "add_rm\t";
                 break;
+
+            case OPC_SUB_RR:
+                out << "sub_rr\t";
+                break;
+
+            case OPC_SUB_RM:
+                out << "sub_rm\t";
+                break;
+
+            case OPC_SUB_MR:
+                out << "sub_mr\t";
+                break;
+
+            case OPC_JMP:
+                out << "jmp\t";
+                break;
+
+            case OPC_PUSH:
+                out << "push\t";
+                break;
+
+            case OPC_POP:
+                out << "pop\t";
+                break;
         }
 
         auto junc = "";
 
         static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
+            {std::bit_cast<std::uint64_t>(RSP), "RSP"},
+            {std::bit_cast<std::uint64_t>(RBP), "RBP"},
             {std::bit_cast<std::uint64_t>(RAX), "RAX"},
             {std::bit_cast<std::uint64_t>(EAX), "EAX"},
             {std::bit_cast<std::uint64_t>(RBX), "RBX"},
@@ -317,9 +344,11 @@ namespace ucb::x64
 
             switch (opnd.kind)
             {
-                case MachineOperand::Imm:
-                    out << "imm(" << opnd.val << ")";
+                case MachineOperand::Imm: {
+                    auto val = static_cast<std::int64_t>(opnd.val);
+                    out << "imm(" << val << ")";
                     break;
+                }
 
                 case MachineOperand::Register: {
                     auto it = PHYS_REGS.find(opnd.val);
@@ -441,6 +470,273 @@ namespace ucb::x64
                     .ty = out_ret.ty,
                     .val = std::bit_cast<std::uint64_t>(reg)
                 });
+            }
+        }
+    }
+
+    void X64Target::stack_lower(Procedure& proc)
+    {
+        // compute functionwise clobbers
+        proc.compute_machine_lifetimes();
+        std::set<RegisterID> callee_saved_clobbers;
+
+        for (auto& bblock: proc.bblocks())
+        {
+            for (auto& inst: bblock.machine_insts())
+            {
+                for (auto& opnd: inst.opnds)
+                {
+                    if (opnd.kind == MachineOperand::Register)
+                    {
+                        auto reg = std::bit_cast<RegisterID>(opnd.val);
+                        reg.size = 64; // little trick to make all sizes work
+
+                        if (CALLEE_SAVED_REGS.contains(reg))
+                        {
+                            callee_saved_clobbers.insert(reg);
+                        }
+                    }
+                }
+            }
+        }
+
+        // add stackup
+        auto stackup_insertpoint = proc.entry().machine_insts().begin();
+
+        // calculate stack offsets and stack size
+        auto stack_size = 0;
+        auto leftover_padding = 0;
+        auto last_offset = 0;
+        auto alignment = 2; // 16 bits, might be raised if floats are used
+        std::vector<int> stack_offsets;
+
+        for (auto& [reg, vr]: proc.frame())
+        {
+            int byte_size = reg.size / 8;
+
+            if (leftover_padding >= byte_size)
+            {
+                last_offset += byte_size;
+                leftover_padding -= byte_size;
+                stack_offsets.push_back(last_offset);
+            }
+            else
+            {
+                stack_size += byte_size;
+                last_offset = stack_size;
+                stack_offsets.push_back(last_offset);
+                auto mod = stack_size % alignment;
+
+                if (mod > 0)
+                {
+                    leftover_padding = alignment - mod;
+                    stack_size += leftover_padding;
+                }
+                else
+                {
+                    leftover_padding = 0;
+                }
+            }
+        }
+
+        if (stack_size > 0)
+        {
+            // save the old rbp
+            MachineInstruction push_rbp;
+            push_rbp.opc = OPC_PUSH;
+            push_rbp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RBP)
+            });
+            proc.entry().machine_insts().insert(stackup_insertpoint, std::move(push_rbp));
+
+            // update rbp
+            MachineInstruction update_rbp;
+            update_rbp.opc = OPC_MOVE_RR;
+            update_rbp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RBP)
+            });
+            update_rbp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RSP)
+            });
+            proc.entry().machine_insts().insert(stackup_insertpoint, std::move(update_rbp));
+
+            // increase stack
+            MachineInstruction update_rsp;
+            update_rsp.opc = OPC_SUB_RR;
+            update_rsp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RSP)
+            });
+            update_rsp.opnds.push_back({
+                .kind = MachineOperand::Imm,
+                .val = static_cast<std::uint64_t>(stack_size)
+            });
+            proc.entry().machine_insts().insert(stackup_insertpoint, std::move(update_rsp));
+        }
+
+        // push calle saved registers, doing this now will keep rbp intact
+        for (auto reg: callee_saved_clobbers)
+        {
+            MachineInstruction inst;
+            inst.opc = OPC_PUSH;
+
+            MachineOperand opnd;
+            opnd.kind = MachineOperand::Register;
+            opnd.val = std::bit_cast<std::uint64_t>(reg);
+            inst.opnds.push_back(opnd);
+
+            proc.entry().machine_insts().insert(stackup_insertpoint, std::move(inst));
+        }
+
+        if (stack_size > 0 || callee_saved_clobbers.size() > 0)
+        {
+            auto exit_id = -1;
+
+            // compute ret count
+            std::set<int> rets;
+            auto& bblocks = proc.bblocks();
+
+            for (int i = 0; i < bblocks.size(); ++i)
+            {
+                auto& inst = bblocks[i].machine_insts().back();
+
+                if (inst.opc == OPC_RET)
+                {
+                    rets.insert(i);
+                }
+            }
+
+            // if single ret, add stackdown before it
+            if (rets.size() == 1)
+            {
+                exit_id = *rets.begin();
+            }
+            // otherwise, add stackdown on new basic block
+            else if (rets.size() > 0)
+            {
+                auto exit_id = proc.add_bblock("exit");
+
+                for (auto id: rets)
+                {
+                    auto& bblock = bblocks[id];
+                    bblock.machine_insts().pop_back();
+
+                    MachineInstruction inst;
+                    inst.opc = OPC_JMP;
+
+                    MachineOperand opnd;
+                    opnd.kind = MachineOperand::BBlockAddress;
+                    opnd.val = static_cast<std::uint64_t>(exit_id);
+                    inst.opnds.push_back(opnd);
+
+                    bblock.machine_insts().push_back(std::move(inst));
+
+                }
+
+                auto& exit = bblocks[exit_id];
+
+                MachineInstruction inst;
+                inst.opc = OPC_RET;
+
+                MachineOperand opnd;
+                opnd.kind = MachineOperand::BBlockAddress;
+                opnd.val = std::bit_cast<std::uint64_t>(RAX);
+                inst.opnds.push_back(opnd);
+
+                exit.machine_insts().push_back(std::move(inst));
+
+            }
+            else
+            {
+                std::cerr << "unreachable" << std::endl;
+                abort();
+            }
+
+            auto& exit = bblocks[exit_id];
+            auto stackdown_insertpoint = --exit.machine_insts().end();
+
+            // pop calle saved registers in reverse order
+            for (auto csc = callee_saved_clobbers.rbegin(); csc != callee_saved_clobbers.rend(); ++csc)
+            {
+                MachineInstruction inst;
+                inst.opc = OPC_POP;
+
+                MachineOperand opnd;
+                opnd.kind = MachineOperand::Register;
+                opnd.val = std::bit_cast<std::uint64_t>(*csc);
+                inst.opnds.push_back(opnd);
+
+                proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(inst));
+            }
+
+            // restore rsp
+            MachineInstruction restore_rsp;
+            restore_rsp.opc = OPC_ADD_RR;
+            restore_rsp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RSP)
+            });
+            restore_rsp.opnds.push_back({
+                .kind = MachineOperand::Imm,
+                .val = static_cast<std::uint64_t>(stack_size)
+            });
+            proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(restore_rsp));
+
+            // restore rsp
+            MachineInstruction restore_rbp;
+            restore_rbp.opc = OPC_POP;
+            restore_rbp.opnds.push_back({
+                .kind = MachineOperand::Register,
+                .val = std::bit_cast<std::uint64_t>(RBP)
+            });
+            proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(restore_rbp));
+        }
+
+        // for each function call add stackup & stackdown
+        for (auto& bblock: proc.bblocks())
+        {
+            for (auto& inst: bblock.machine_insts())
+            {
+                // TODO stack up & down for calls after adding call instructions
+                //
+
+                auto it = inst.opnds.begin();
+                while (it != inst.opnds.end())
+                {
+                    auto& opnd = *it;
+
+                    if (opnd.kind == MachineOperand::FrameSlot)
+                    {
+                        auto slot = opnd.val;
+
+                        if (slot >= stack_offsets.size())
+                        {
+                            std::cerr << "invalid stack slot" << std::endl;
+                            abort();
+                        }
+
+                        auto offset = stack_offsets[slot];
+
+                        it = ++inst.opnds.insert(it, {
+                            .kind = MachineOperand::Register,
+                            .val = std::bit_cast<std::uint64_t>(RBP)
+                        });
+
+                        it = ++inst.opnds.insert(it, {
+                            .kind = MachineOperand::Imm,
+                            .val = static_cast<std::uint64_t>(-offset)
+                        });
+
+                        it = inst.opnds.erase(it);
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+                }
             }
         }
     }

@@ -26,6 +26,15 @@ namespace ucb
         virtual void dump_proc(Procedure& proc, std::ostream& out) = 0;
         virtual void dump_bblock(BasicBlock& bblock, std::ostream& out) = 0;
         virtual void abi_lower(Procedure& proc) = 0;
+        virtual void stack_lower(Procedure& proc) = 0;
         // emit prologue/epilogue
+    };
+
+    class ASMPrinter
+    {
+    public:
+        virtual ~ASMPrinter() = default;
+
+        virtual void print(CompileUnit& unit, std::ostream& out) = 0;
     };
 }

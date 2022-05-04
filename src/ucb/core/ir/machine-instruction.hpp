@@ -17,7 +17,8 @@ namespace ucb
             Imm,
             Register,
             FrameSlot,
-            BBlockAddress
+            BBlockAddress//,
+            // Offset
         } kind;
 
         TypeID ty;

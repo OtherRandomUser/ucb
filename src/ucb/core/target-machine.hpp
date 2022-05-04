@@ -2,6 +2,7 @@
 
 #include <ostream>
 
+#include <ucb/core/target.hpp>
 #include <ucb/core/ir/compile-unit.hpp>
 #include <ucb/core/isel/isel.hpp>
 #include <ucb/core/regalloc/regalloc.hpp>
@@ -16,10 +17,11 @@ namespace ucb
     class TargetMachine
     {
     public:
-        TargetMachine(TargetArch arch, std::unique_ptr<ISel> isel, std::unique_ptr<RegAlloc> regalloc):
+        TargetMachine(TargetArch arch, std::unique_ptr<ISel> isel, std::unique_ptr<RegAlloc> regalloc, std::shared_ptr<Target> target):
             _arch{arch},
             _isel(std::move(isel)),
-            _regalloc(std::move(regalloc))
+            _regalloc(std::move(regalloc)),
+            _target(std::move(target))
         {
         }
 
@@ -29,5 +31,6 @@ namespace ucb
         TargetArch _arch;
         std::unique_ptr<ISel> _isel;
         std::unique_ptr<RegAlloc> _regalloc;
+        std::shared_ptr<Target> _target;
     };
 }

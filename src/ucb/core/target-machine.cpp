@@ -8,6 +8,8 @@ namespace ucb
         {
             _isel->run_on_procedure(proc, true);
             _regalloc->run_on_procedure(proc, true);
+            _target->stack_lower(*proc);
+            _target->dump_proc(*proc, std::cout);
         }
     }
 }

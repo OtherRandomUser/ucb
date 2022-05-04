@@ -22,7 +22,7 @@ std::unique_ptr<PassManager> make_pass_manager()
 
     auto isel = std::make_unique<DynamicISel>(target);
     auto regalloc = std::make_unique<GraphColoringRegAlloc>(target);
-    auto target_machine = std::make_unique<TargetMachine>(TargetArch::ARCH_X64, std::move(isel), std::move(regalloc));
+    auto target_machine = std::make_unique<TargetMachine>(TargetArch::ARCH_X64, std::move(isel), std::move(regalloc), target);
     return std::make_unique<PassManager>(std::move(passes), std::move(target_machine));
 }
 
