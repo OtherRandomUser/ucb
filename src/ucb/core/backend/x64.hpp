@@ -61,6 +61,8 @@ namespace ucb::x64
         void abi_lower(Procedure& proc) override;
         void stack_lower(Procedure& proc) override;
 
+        void print_asm(CompileUnit& unit, std::ostream& out, const std::string& src_filename) override;
+
     private:
         void dump_inst(MachineInstruction& inst, std::ostream& out);
     };

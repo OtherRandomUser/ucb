@@ -104,24 +104,6 @@ namespace ucb
         std::cerr << "register not found\n";
         abort();
     }
-/*
-    std::shared_ptr<DagNode> Dag::get_int_imm(long int val, TypeID ty)
-    {
-        auto n = std::make_shared<DagNode>(-1, InstrOpcode::OP_NONE, DagDefKind::DDK_IMM, ty);
-        n->_imm_val = std::bit_cast<std::uint64_t>(val);
-        return n;
-    }
-
-    std::shared_ptr<DagNode> Dag::get_uint_imm(unsigned long val, TypeID ty)
-    {
-        auto n = std::make_shared<DagNode>(-1, InstrOpcode::OP_NONE, DagDefKind::DDK_IMM, ty);
-        n->_imm_val = std::bit_cast<std::uint64_t>(val);
-        return n;
-    }
-
-
-    std::shared_ptr<DagNode> get_float_imm(double val, TypeID ty);
-    */
 
     void Dag::dump(std::ostream& out, CompileUnit& context)
     {

@@ -11,5 +11,9 @@ namespace ucb
             _target->stack_lower(*proc);
             _target->dump_proc(*proc, std::cout);
         }
+
+        std::cout << "!!!!!ASM!!!!!!" << std::endl;
+        _target->print_asm(*unit, std::cout, "batata");
+        std::cout << std::endl;
     }
 }

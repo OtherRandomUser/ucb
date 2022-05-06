@@ -5,6 +5,34 @@
 
 namespace ucb::x64
 {
+    static const std::unordered_map<MachineOpc, std::string> OPCS = {{
+        {OPC_NONE, "\tNONE\t"},
+        {OPC_RET, "\tret"},
+        {OPC_MOVE_RR, "\tmov\t"},
+        {OPC_MOVE_MR, "\tmov\t"},
+        {OPC_MOVE_RM, "\tmov\t"},
+        {OPC_ADD_RR, "\tadd\t"},
+        {OPC_ADD_RM, "\tadd\t"},
+        {OPC_ADD_MR, "\tadd\t"},
+        {OPC_SUB_RR, "\tsub\t"},
+        {OPC_SUB_RM, "\tsub\t"},
+        {OPC_SUB_MR, "\tsub\t"},
+        {OPC_JMP, "\tjmp\t"},
+        {OPC_PUSH, "\tpush\t"},
+        {OPC_POP, "\tpop\t"},
+    }};
+
+    static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
+        {std::bit_cast<std::uint64_t>(RSP), "rsp"},
+        {std::bit_cast<std::uint64_t>(RBP), "rbp"},
+        {std::bit_cast<std::uint64_t>(RAX), "rax"},
+        {std::bit_cast<std::uint64_t>(EAX), "eax"},
+        {std::bit_cast<std::uint64_t>(RBX), "rbx"},
+        {std::bit_cast<std::uint64_t>(EBX), "ebx"},
+        {std::bit_cast<std::uint64_t>(RCX), "rcx"},
+        {std::bit_cast<std::uint64_t>(ECX), "ecx"}
+    }};
+
     std::vector<Pat> X64Target::load_pats()
     {
         return std::initializer_list<Pat>
@@ -324,18 +352,7 @@ namespace ucb::x64
                 break;
         }
 
-        auto junc = "";
-
-        static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
-            {std::bit_cast<std::uint64_t>(RSP), "RSP"},
-            {std::bit_cast<std::uint64_t>(RBP), "RBP"},
-            {std::bit_cast<std::uint64_t>(RAX), "RAX"},
-            {std::bit_cast<std::uint64_t>(EAX), "EAX"},
-            {std::bit_cast<std::uint64_t>(RBX), "RBX"},
-            {std::bit_cast<std::uint64_t>(EBX), "EBX"},
-            {std::bit_cast<std::uint64_t>(RCX), "RCX"},
-            {std::bit_cast<std::uint64_t>(ECX), "ECX"}
-        }};
+        auto junc = std::to_string(inst.size) + "\t";
 
         for (auto& opnd: inst.opnds)
         {
@@ -364,6 +381,32 @@ namespace ucb::x64
                     }
 
                     break;
+                }
+
+                case MachineOperand::MemAddr: {
+                    auto it = PHYS_REGS.find(opnd.val);
+
+                    if (it == PHYS_REGS.end())
+                    {
+                        auto reg = std::bit_cast<RegisterID>(opnd.val);
+                        out << "[{ " << reg.val << ", " << reg.size << " }";
+                    }
+                    else
+                    {
+                        out << "[" << it->second;
+                    }
+
+                    if (opnd.offset < 0)
+                    {
+                        out << " - " << -opnd.offset << "]";
+                    }
+                    else
+                    {
+                        out << " + " << opnd.offset << "]";
+                    }
+
+                    break;
+
                 }
 
                 case MachineOperand::FrameSlot:
@@ -400,7 +443,8 @@ namespace ucb::x64
             {
                 // pass via frame
                 auto ty = vreg.ty();
-                auto& inst = entry.prepend_machine_instr(OPC_MOVE_RM/*, vreg.ty()*/);
+                auto& inst = entry.prepend_machine_instr(OPC_MOVE_RM);
+                inst.size = vreg.ty().size;
 
                 inst.opnds.push_back({
                     .kind = MachineOperand::Register,
@@ -421,6 +465,7 @@ namespace ucb::x64
                 // pass via register
                 auto ty = vreg.ty();
                 auto& inst = entry.prepend_machine_instr(OPC_MOVE_RR);
+                inst.size = ty.size;
 
                 RegisterID p_reg = regs[in_reg++];
                 p_reg.size = ty.size;
@@ -455,6 +500,7 @@ namespace ucb::x64
                 reg.size = out_ret.ty.size;
 
                 auto& mov = machine_insts.emplace_back(OPC_MOVE_RR);
+                mov.size = reg.size;
                 mov.opnds.push_back({
                     .kind = MachineOperand::Register,
                     .ty = out_ret.ty,
@@ -544,6 +590,7 @@ namespace ucb::x64
             // save the old rbp
             MachineInstruction push_rbp;
             push_rbp.opc = OPC_PUSH;
+            push_rbp.size = RBP.size;
             push_rbp.opnds.push_back({
                 .kind = MachineOperand::Register,
                 .val = std::bit_cast<std::uint64_t>(RBP)
@@ -553,6 +600,7 @@ namespace ucb::x64
             // update rbp
             MachineInstruction update_rbp;
             update_rbp.opc = OPC_MOVE_RR;
+            update_rbp.size = RBP.size;
             update_rbp.opnds.push_back({
                 .kind = MachineOperand::Register,
                 .val = std::bit_cast<std::uint64_t>(RBP)
@@ -566,12 +614,17 @@ namespace ucb::x64
             // increase stack
             MachineInstruction update_rsp;
             update_rsp.opc = OPC_SUB_RR;
+            update_rsp.size = RSP.size;
+            auto ty = T_ANY_I;
+            ty.size = RSP.size;
             update_rsp.opnds.push_back({
                 .kind = MachineOperand::Register,
+                .ty = ty,
                 .val = std::bit_cast<std::uint64_t>(RSP)
             });
             update_rsp.opnds.push_back({
                 .kind = MachineOperand::Imm,
+                .ty = ty,
                 .val = static_cast<std::uint64_t>(stack_size)
             });
             proc.entry().machine_insts().insert(stackup_insertpoint, std::move(update_rsp));
@@ -582,6 +635,7 @@ namespace ucb::x64
         {
             MachineInstruction inst;
             inst.opc = OPC_PUSH;
+            inst.size = reg.size;
 
             MachineOperand opnd;
             opnd.kind = MachineOperand::Register;
@@ -605,6 +659,7 @@ namespace ucb::x64
 
                 if (inst.opc == OPC_RET)
                 {
+                    inst.opnds.clear();
                     rets.insert(i);
                 }
             }
@@ -663,6 +718,7 @@ namespace ucb::x64
             {
                 MachineInstruction inst;
                 inst.opc = OPC_POP;
+                inst.size = csc->size;
 
                 MachineOperand opnd;
                 opnd.kind = MachineOperand::Register;
@@ -675,12 +731,17 @@ namespace ucb::x64
             // restore rsp
             MachineInstruction restore_rsp;
             restore_rsp.opc = OPC_ADD_RR;
+            restore_rsp.size = RSP.size;
+            auto ty = T_ANY_I;
+            ty.size = RSP.size;
             restore_rsp.opnds.push_back({
                 .kind = MachineOperand::Register,
+                .ty = ty,
                 .val = std::bit_cast<std::uint64_t>(RSP)
             });
             restore_rsp.opnds.push_back({
                 .kind = MachineOperand::Imm,
+                .ty = ty,
                 .val = static_cast<std::uint64_t>(stack_size)
             });
             proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(restore_rsp));
@@ -688,6 +749,7 @@ namespace ucb::x64
             // restore rsp
             MachineInstruction restore_rbp;
             restore_rbp.opc = OPC_POP;
+            restore_rbp.size = RBP.size;
             restore_rbp.opnds.push_back({
                 .kind = MachineOperand::Register,
                 .val = std::bit_cast<std::uint64_t>(RBP)
@@ -703,6 +765,7 @@ namespace ucb::x64
                 // TODO stack up & down for calls after adding call instructions
                 //
 
+                // replace slot indexes with stack offsts
                 auto it = inst.opnds.begin();
                 while (it != inst.opnds.end())
                 {
@@ -721,13 +784,9 @@ namespace ucb::x64
                         auto offset = stack_offsets[slot];
 
                         it = ++inst.opnds.insert(it, {
-                            .kind = MachineOperand::Register,
-                            .val = std::bit_cast<std::uint64_t>(RBP)
-                        });
-
-                        it = ++inst.opnds.insert(it, {
-                            .kind = MachineOperand::Imm,
-                            .val = static_cast<std::uint64_t>(-offset)
+                            .kind = MachineOperand::MemAddr,
+                            .val = std::bit_cast<std::uint64_t>(RBP),
+                            .offset = -offset
                         });
 
                         it = inst.opnds.erase(it);
@@ -738,6 +797,126 @@ namespace ucb::x64
                     }
                 }
             }
+        }
+    }
+
+    void X64Target::print_asm(CompileUnit& unit, std::ostream& out, const std::string& src_filename)
+    {
+        out
+            << "\t.text\n"
+            << "\t.intel_syntax noprefix\n"
+            << "\t.file   \"" << src_filename << "\"\n";
+
+        int proc_cnt = 0;
+        int tmp_lbl_cnt = 0;
+
+        for (auto proc_ptr: unit.procs())
+        {
+            auto& proc = *proc_ptr;
+
+            out
+                << "\t.globl\t" << proc.id() << "\n"
+                << "\t.p2align\t4, 0x90\n"
+                << "\t.type\t" << proc.id() << ",@function\n"
+                << proc.id() << ":\n";
+
+            std::vector<std::string> tmp_lbl_names;
+            tmp_lbl_names.reserve(proc.bblocks().size());
+
+            for (auto& bblock: proc.bblocks())
+            {
+                std::string name = ".TmpLbl" + std::to_string(tmp_lbl_cnt++);
+                tmp_lbl_names.push_back(std::move(name));
+            }
+
+            for (int i = 0; i < proc.bblocks().size(); ++i)
+            {
+                auto& bblock = proc.bblocks()[i];
+                out << tmp_lbl_names[i] << ": # bblock " << bblock.id() << "\n";
+
+                for (auto& inst: bblock.machine_insts())
+                {
+                    out << OPCS.at(inst.opc);
+                    std::string junc = "";
+
+                    for (auto& opnd: inst.opnds)
+                    {
+                        switch (opnd.kind)
+                        {
+                            case MachineOperand::Imm:
+                                if (opnd.ty.val == T_ANY_U.val)
+                                {
+                                    out << junc << opnd.val;
+                                }
+                                else if (opnd.ty.val == T_ANY_I.val)
+                                {
+                                    out << junc << static_cast<std::int64_t>(opnd.val);
+                                }
+                                else if (opnd.ty.val == T_ANY_F.val)
+                                {
+                                    out << junc << std::bit_cast<double>(opnd.val);
+                                }
+                                else
+                                {
+                                    std::cerr << "unexpected type" << std::endl;
+                                    abort();
+                                }
+
+                                break;
+
+                            case MachineOperand::Register:
+                                out << junc << PHYS_REGS.at(opnd.val);
+                                break;
+
+                            case MachineOperand::MemAddr:
+                                out << junc;
+
+                                switch (inst.size)
+                                {
+                                default:
+                                    std::cerr << "unexpected size: " << inst.size << std::endl;
+                                    abort();
+
+                                case  8: out << "hword ptr ["; break;
+                                case 16: out <<  "word ptr ["; break;
+                                case 32: out << "dword ptr ["; break;
+                                case 64: out << "qword ptr ["; break;
+                                }
+
+                                out << PHYS_REGS.at(opnd.val);
+
+                                if (opnd.offset < 0)
+                                {
+                                    out << " - " << -opnd.offset;
+                                }
+                                else
+                                {
+                                    out << " + " << opnd.offset;
+                                }
+
+                                out << "]";
+                                break;
+
+                            case MachineOperand::FrameSlot:
+                                std::cerr << "unreachable" << std::endl;
+                                abort();
+
+                            case MachineOperand::BBlockAddress:
+                                out << junc << tmp_lbl_names[opnd.val];
+                                break;
+                        }
+
+                        junc = ", ";
+                    }
+
+                    out << "\n";
+                }
+            }
+
+            auto end_lbl = ".TmpProcEnd" + std::to_string(proc_cnt++);
+            out
+                << end_lbl << ":\n"
+                << "\t.size " << proc.id() << ", " << end_lbl << "-" << proc.id() << std::endl;
         }
     }
 }

@@ -14,22 +14,16 @@ namespace ucb
         MatchResult res;
         res.is_match = false;
 
-        std::cout << "matching" << std::endl;
-
         // TODO relax to is supper of so that pointers work
         if (ty != n->ty())
         {
-            std::cout << "type mismatch" << std::endl;
             return res;
         }
 
         if (kind == PatNode::Inst)
         {
-            std::cout << "matching inst" << std::endl;
-
             if (opc != n->opc())
             {
-                std::cout << "match failed on inst opc" << std::endl;
                 return res;
             }
 
@@ -37,7 +31,6 @@ namespace ucb
 
             if (opnds.size() != args.size())
             {
-                std::cout << "match failed on inst args: " << opnds.size() << " vs " << args.size() << std::endl;
                 return res;
             }
 
@@ -50,7 +43,6 @@ namespace ucb
 
                 if (!match_res.is_match)
                 {
-                    std::cout << "recursive match failed" << std::endl;
                     return res;
                 }
 
@@ -67,8 +59,6 @@ namespace ucb
 
         if (kind == PatNode::Opnd)
         {
-            std::cout << "matching operand" << std::endl;
-
             switch (opnd)
             {
             case OperandKind::OK_POISON:
@@ -94,8 +84,6 @@ namespace ucb
             }
 
             res.selected_opnds.push_back(std::move(n));
-            std::cout << "operand match succeeded" << std::endl;
-
         }
 
         res.is_match = true;
@@ -141,6 +129,7 @@ namespace ucb
 
         for (auto& r: reps)
         {
+            std::cout << "inst rep" << std::endl;
             MachineInstruction inst;
 
             inst.opc = r.opc;
@@ -157,6 +146,8 @@ namespace ucb
                     mop.ty = n->ty();
                     mop.is_def = true;
                     mop.is_use = r.def_is_also_use;
+                    std::cout << "!!! minst size " << mop.ty.size << "!!!" << std::endl;
+                    inst.size = mop.ty.size;
                 }
                 else
                 {
@@ -171,6 +162,8 @@ namespace ucb
                         mop.kind = MachineOperand::Register;
                         mop.val = std::bit_cast<std::uint64_t>(on->reg());
                         mop.ty = on->ty();
+                        std::cout << "!!! minst size " << mop.ty.size << "!!!" << std::endl;
+                        inst.size = mop.ty.size;
                         break;
 
                     case DagDefKind::DDK_MEM:

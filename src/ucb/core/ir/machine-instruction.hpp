@@ -16,13 +16,15 @@ namespace ucb
         {
             Imm,
             Register,
+            MemAddr,
             FrameSlot,
-            BBlockAddress//,
+            BBlockAddress,
             // Offset
         } kind;
 
         TypeID ty;
         std::uint64_t val;
+        std::int32_t offset{0};
 
         bool is_def{false};
         bool is_use{true};
@@ -30,18 +32,19 @@ namespace ucb
 
     struct MachineInstruction
     {
-        std::uint64_t opc;
+        MachineOpc opc;
+        std::int32_t size{0};
         std::vector<MachineOperand> opnds;
         std::string id;
 
         MachineInstruction() = default;
 
-        MachineInstruction(std::uint64_t opc_):
+        MachineInstruction(MachineOpc opc_):
             opc{opc_}
         {
         }
 
-        MachineInstruction(std::uint64_t opc_, std::string id_):
+        MachineInstruction(MachineOpc opc_, std::string id_):
             opc{opc_},
             id(std::move(id_))
         {

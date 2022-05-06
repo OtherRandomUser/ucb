@@ -139,8 +139,6 @@ namespace ucb
             dag.dump(std::cout, *bblock.context());
         }
 
-        std::cout << "built dag" << std::endl;
-
         // match
         _pats = _target->load_pats();
 
@@ -157,18 +155,14 @@ namespace ucb
 
         if (debug)
         {
-            std::cout << "selected block:" << std::endl;
             _target->dump_bblock(bblock, std::cout);
         }
     }
 
     void DynamicISel::recursive_match(std::shared_ptr<DagNode> n, CompileUnit& context)
     {
-        std::cout << "recursive match call" << std::endl;
-
         if (n->is_leaf())
         {
-            std::cout << "leaf node" << std::endl;
             return;
         }
 
@@ -185,8 +179,6 @@ namespace ucb
 
         for (auto& pat: _pats)
         {
-            std::cout << "matching #" << ++count << std::endl;
-
             auto res = pat.match(n);
 
             if (res.is_match)
@@ -195,17 +187,11 @@ namespace ucb
 
                 for (auto opnd: res.selected_opnds)
                 {
-                    std::cout << "opnd cost: " << opnd->cost() << std::endl;
                     match_cost += opnd->cost();
                 }
 
-                std::cout << "opnd count: " << res.selected_opnds.size() << std::endl;
-                std::cout << "match cost: " << match_cost << std::endl;
-
                 if (match_cost < cost)
                 {
-                    std::cout << "updated match to #" << count << std::endl;
-
                     cost = match_cost;
                     selected = &pat;
                     selected_opnds = std::move(res.selected_opnds);
