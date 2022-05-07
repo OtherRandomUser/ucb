@@ -1,5 +1,6 @@
 #include <ucb/core/config.hpp>
 
+#include <fstream>
 #include <iostream>
 
 #include <ucb/core/pass-manager.hpp>
@@ -34,6 +35,7 @@ int main(int argc, char **argv)
     desc.add_options()
         ("help,h", "print this message")
         ("input-file", po::value<std::string>(&input_file)->required(), "file to be compiled")
+        ("output,o", "output file name")
     ;
 
     po::positional_options_description p;
@@ -55,9 +57,10 @@ int main(int argc, char **argv)
     }
 
     po::notify(vm);
+    std::string src_fname = vm["input-file"].as<std::string>();
 
     auto context = std::make_shared<CompileUnit>();
-    frontend::Parser parser(vm["input-file"].as<std::string>(), context, false, false);
+    frontend::Parser parser(src_fname, context, false, false);
 
     if (!parser.parse_unit())
     {
@@ -65,8 +68,27 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    int start = src_fname.find_last_of('/') + 1;
+    int end = src_fname.find_last_of('.');
+
+    std::string output_fname =
+        vm.count("output") > 0 ?
+        vm["output"].as<std::string>() :
+        src_fname.substr(start, end - start) + ".s";
+
+    std::ofstream output;
+    output.open(output_fname);
+
+    if (!output.is_open())
+    {
+        std::cerr << "could not open output file " << output_fname << std::endl;
+        abort();
+    }
+
     auto pm = make_pass_manager();
-    pm->apply(context);
+    pm->apply(context, src_fname, output);
+
+    output.close();
 
     return EXIT_SUCCESS;
 }

@@ -24,7 +24,7 @@ namespace ucb
         {
         }
 
-        void apply(std::shared_ptr<CompileUnit> unit);
+        void apply(std::shared_ptr<CompileUnit> unit, const std::string& src_file, std::ostream& output);
 
     private:
         std::vector<std::unique_ptr<Pass>> _passes;

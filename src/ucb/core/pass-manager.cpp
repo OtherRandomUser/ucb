@@ -2,7 +2,7 @@
 
 namespace  ucb
 {
-    void PassManager::apply(std::shared_ptr<CompileUnit> unit)
+    void PassManager::apply(std::shared_ptr<CompileUnit> unit, const std::string& src_file, std::ostream& output)
     {
         for (auto& pass: _passes)
         {
@@ -12,7 +12,6 @@ namespace  ucb
             }
         }
 
-        _target->compile(unit);
-        //unit->dump(std::cout);
+        _target->compile(unit, std::move(src_file), output);
     }
 }

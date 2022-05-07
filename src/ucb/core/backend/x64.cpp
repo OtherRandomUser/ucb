@@ -23,14 +23,36 @@ namespace ucb::x64
     }};
 
     static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
-        {std::bit_cast<std::uint64_t>(RSP), "rsp"},
-        {std::bit_cast<std::uint64_t>(RBP), "rbp"},
         {std::bit_cast<std::uint64_t>(RAX), "rax"},
         {std::bit_cast<std::uint64_t>(EAX), "eax"},
         {std::bit_cast<std::uint64_t>(RBX), "rbx"},
         {std::bit_cast<std::uint64_t>(EBX), "ebx"},
         {std::bit_cast<std::uint64_t>(RCX), "rcx"},
-        {std::bit_cast<std::uint64_t>(ECX), "ecx"}
+        {std::bit_cast<std::uint64_t>(ECX), "ecx"},
+        {std::bit_cast<std::uint64_t>(RDX), "rdx"},
+        {std::bit_cast<std::uint64_t>(EDX), "edx"},
+        {std::bit_cast<std::uint64_t>(RSP), "rsp"},
+        {std::bit_cast<std::uint64_t>(RBP), "rbp"},
+        {std::bit_cast<std::uint64_t>(RSI), "rsi"},
+        {std::bit_cast<std::uint64_t>(ESI), "esi"},
+        {std::bit_cast<std::uint64_t>(RDI), "rdi"},
+        {std::bit_cast<std::uint64_t>(EDI), "edi"},
+        {std::bit_cast<std::uint64_t>(R8),  "r8"},
+        {std::bit_cast<std::uint64_t>(E8),  "e8"},
+        {std::bit_cast<std::uint64_t>(R9),  "r9"},
+        {std::bit_cast<std::uint64_t>(E9),  "e9"},
+        {std::bit_cast<std::uint64_t>(R10), "r10"},
+        {std::bit_cast<std::uint64_t>(E10), "e10"},
+        {std::bit_cast<std::uint64_t>(R11), "r11"},
+        {std::bit_cast<std::uint64_t>(E11), "e11"},
+        {std::bit_cast<std::uint64_t>(R12), "r12"},
+        {std::bit_cast<std::uint64_t>(E12), "e12"},
+        {std::bit_cast<std::uint64_t>(R13), "r13"},
+        {std::bit_cast<std::uint64_t>(E13), "e13"},
+        {std::bit_cast<std::uint64_t>(R14), "r14"},
+        {std::bit_cast<std::uint64_t>(E14), "e14"},
+        {std::bit_cast<std::uint64_t>(R15), "r15"},
+        {std::bit_cast<std::uint64_t>(E15), "e15"},
     }};
 
     std::vector<Pat> X64Target::load_pats()
@@ -434,7 +456,7 @@ namespace ucb::x64
         auto total_args = params.size();
 
         // TODO actually check the ABI and add remaining registers
-        std::vector<RegisterID> regs = {RAX, RBX, RCX};
+        std::vector<RegisterID> regs = {RDI, RSI, RDX, RCX, R8};
 
         // lower inputs
         for (const auto& [reg, vreg]: params)
@@ -918,5 +940,7 @@ namespace ucb::x64
                 << end_lbl << ":\n"
                 << "\t.size " << proc.id() << ", " << end_lbl << "-" << proc.id() << std::endl;
         }
+
+        out.flush();
     }
 }

@@ -25,7 +25,7 @@ namespace ucb
         {
         }
 
-        void compile(std::shared_ptr<CompileUnit> unit);
+        void compile(std::shared_ptr<CompileUnit> unit, const std::string& src_file, std::ostream& output);
 
     private:
         TargetArch _arch;

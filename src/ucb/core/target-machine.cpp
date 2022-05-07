@@ -2,7 +2,7 @@
 
 namespace ucb
 {
-    void TargetMachine::compile(std::shared_ptr<CompileUnit> unit)
+    void TargetMachine::compile(std::shared_ptr<CompileUnit> unit, const std::string& src_file, std::ostream& output)
     {
         for(auto& proc: unit->procs())
         {
@@ -12,8 +12,6 @@ namespace ucb
             _target->dump_proc(*proc, std::cout);
         }
 
-        std::cout << "!!!!!ASM!!!!!!" << std::endl;
-        _target->print_asm(*unit, std::cout, "batata");
-        std::cout << std::endl;
+        _target->print_asm(*unit, output, src_file);
     }
 }
