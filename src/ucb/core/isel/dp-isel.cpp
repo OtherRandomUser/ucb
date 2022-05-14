@@ -201,7 +201,7 @@ namespace ucb
 
         if (selected == nullptr)
         {
-            std::cerr << "failed to match node\n";
+            std::cerr << "failed to match node" << std::endl;
             n->dump(std::cerr, context);
             abort();
         }

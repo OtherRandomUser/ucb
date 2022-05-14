@@ -13,12 +13,8 @@ namespace ucb::x64
     constexpr MachineOpc OPC_MOVE_RR = 2;
     constexpr MachineOpc OPC_MOVE_MR = 3;
     constexpr MachineOpc OPC_MOVE_RM = 4;
-    constexpr MachineOpc OPC_ADD_RR = 5;
-    constexpr MachineOpc OPC_ADD_RM = 6;
-    constexpr MachineOpc OPC_ADD_MR = 7;
-    constexpr MachineOpc OPC_SUB_RR = 8;
-    constexpr MachineOpc OPC_SUB_RM = 9;
-    constexpr MachineOpc OPC_SUB_MR = 10;
+    constexpr MachineOpc OPC_ADD = 5;
+    constexpr MachineOpc OPC_SUB = 6;
 
     constexpr MachineOpc OPC_JMP = 51;
 
@@ -37,7 +33,7 @@ namespace ucb::x64
     constexpr RegisterID RDX { RCX.val + 1, 64 };
     constexpr RegisterID EDX { RDX.val, 32 };
 
-    constexpr RegisterID RSP { RDX.val, 64 };
+    constexpr RegisterID RSP { RDX.val + 1, 64 };
     constexpr RegisterID RBP { RSP.val + 1, 64 };
 
     constexpr RegisterID RSI { RBP.val + 1, 64 };

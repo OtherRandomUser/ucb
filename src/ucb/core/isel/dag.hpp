@@ -3,6 +3,7 @@
 #include <bit>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <vector>
 
 #include <ucb/core/ir/compile-unit.hpp>
@@ -45,6 +46,7 @@ namespace ucb
         std::uint64_t& mem_id() { return _mem_id; }
         const std::string& id() const { return _id; }
         float& cost() { return _cost; }
+        int& uses() { return _uses; }
 
         std::vector<std::shared_ptr<DagNode>>& args() { return _args; }
         std::vector<std::shared_ptr<DagNode>>& selected_args() { return _selected_args; }
@@ -144,21 +146,24 @@ namespace ucb
 
         void add_def(std::shared_ptr<DagNode> def)
         {
-            _all_nodes.push_back(std::move(def));
+            _all_nodes.push_back(def);
+
+            for (auto arg: def->args())
+            {
+                if (++arg->uses() > 1)
+                {
+                    _root_nodes.insert(arg);
+                }
+            }
         }
 
         void add_root_def(std::shared_ptr<DagNode> def)
         {
-            _root_nodes.push_back(def);
+            _root_nodes.insert(def);
             add_def(std::move(def));
         }
 
-        // void add_live_in(RegisterID id, TypeID ty)
-        // {
-        //     _live_ins.emplace_back(id, ty);
-        // }
-
-        std::vector<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
+        std::set<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
 
         void dump(std::ostream& out, CompileUnit& context);
 
@@ -167,10 +172,8 @@ namespace ucb
         // std::shared_ptr<DagNode> _exit;
 
         std::vector<std::shared_ptr<DagNode>> _all_nodes;
-        std::vector<std::shared_ptr<DagNode>> _root_nodes;
-        // std::vector<std::pair<RegisterID, TypeID>> _live_ins;
+        std::set<std::shared_ptr<DagNode>> _root_nodes;
 
-        // std::vector<DagImm> _imms;
         std::vector<DagMem> _mems;
     };
 }

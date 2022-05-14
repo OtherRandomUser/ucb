@@ -9,3 +9,15 @@ i32 @simple(i32 %a, i32 %b)
     %res = add i32 %a.0 %b.0
     ret i32 %res
 }
+
+i32 @simple2(i32 %a, i32 %b)
+{
+    %a.ref = alloc i32
+    store i32 %a ^i32 %a.ref
+    %b.ref = alloc i32
+    store i32 %b ^i32 %b.ref
+    %a.0 = load i32 ^i32 %a.ref
+    %b.0 = load i32 ^i32 %b.ref
+    %res = sub i32 %a.0 %b.0
+    ret i32 %res
+}

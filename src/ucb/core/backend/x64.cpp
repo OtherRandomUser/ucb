@@ -11,12 +11,8 @@ namespace ucb::x64
         {OPC_MOVE_RR, "\tmov\t"},
         {OPC_MOVE_MR, "\tmov\t"},
         {OPC_MOVE_RM, "\tmov\t"},
-        {OPC_ADD_RR, "\tadd\t"},
-        {OPC_ADD_RM, "\tadd\t"},
-        {OPC_ADD_MR, "\tadd\t"},
-        {OPC_SUB_RR, "\tsub\t"},
-        {OPC_SUB_RM, "\tsub\t"},
-        {OPC_SUB_MR, "\tsub\t"},
+        {OPC_ADD, "\tadd\t"},
+        {OPC_SUB, "\tsub\t"},
         {OPC_JMP, "\tjmp\t"},
         {OPC_PUSH, "\tpush\t"},
         {OPC_POP, "\tpop\t"},
@@ -59,18 +55,18 @@ namespace ucb::x64
     {
         return std::initializer_list<Pat>
         {
-            // single load from frame slot
+            // single load signed int from frame slot
             {
                 .cost = 1,
                 .pat = {
                     .kind = PatNode::Inst,
-                    .ty = T_I32,
+                    .ty = T_ANY_I,
                     .opc = InstrOpcode::OP_LOAD,
                     .opnd = OperandKind::OK_POISON,
                     .opnds = {
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_FRAME_SLOT
                         }
@@ -78,30 +74,55 @@ namespace ucb::x64
                 },
                 .reps = {
                     {
-                        .ty = T_I32,
+                        .ty = T_SAME,
                         .opc = OPC_MOVE_RM,
                         .opnds = {-1, 0}
                     }
                 }
             },
-            // single store to frame slot
+            // single load unsigned int from frame slot
             {
                 .cost = 1,
                 .pat = {
                     .kind = PatNode::Inst,
-                    .ty = T_I32,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_LOAD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_FRAME_SLOT
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RM,
+                        .opnds = {-1, 0}
+                    }
+                }
+            },
+            // single store signed int to frame slot
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
                     .opc = InstrOpcode::OP_STORE,
                     .opnd = OperandKind::OK_POISON,
                     .opnds = {
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_FRAME_SLOT
                         },
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_VIRTUAL_REG
                         }
@@ -109,31 +130,31 @@ namespace ucb::x64
                 },
                 .reps = {
                     {
-                        .ty = T_I32,
+                        .ty = T_SAME,
                         .opc = OPC_MOVE_MR,
                         // .opnds = {-1, 0}
                         .opnds = {0, 1}
                     }
                 }
             },
-            // add 2 integer registers
+            // single store unsigned int to frame slot
             {
                 .cost = 1,
                 .pat = {
                     .kind = PatNode::Inst,
-                    .ty = T_I32,
-                    .opc = InstrOpcode::OP_ADD,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_STORE,
                     .opnd = OperandKind::OK_POISON,
                     .opnds = {
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
+                            .opnd = OperandKind::OK_FRAME_SLOT
                         },
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_VIRTUAL_REG
                         }
@@ -141,42 +162,111 @@ namespace ucb::x64
                 },
                 .reps = {
                     {
-                        .ty = T_I32,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_I32,
-                        .opc = OPC_ADD_RR,
-                        .opnds = {-1, /*0,*/ 1},
-                        .def_is_also_use = true
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_MR,
+                        // .opnds = {-1, 0}
+                        .opnds = {0, 1}
                     }
                 }
             },
-            // add mem with integer register (1)
+            // add 2 signed integer registers
             {
                 .cost = 1,
                 .pat = {
                     .kind = PatNode::Inst,
-                    .ty = T_I32,
+                    .ty = T_ANY_I,
                     .opc = InstrOpcode::OP_ADD,
                     .opnd = OperandKind::OK_POISON,
                     .opnds = {
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
+                        .opnds = {-1, /*0,*/ 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // add 2 unsigned integer registers
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
+                        .opnds = {-1, /*0,*/ 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // add mem with signed integer register (1)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_VIRTUAL_REG
                         },
                         {
                             .kind = PatNode::Inst,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_LOAD,
                             .opnd = OperandKind::OK_POISON,
                             .opnds = {
                                 {
                                     .kind = PatNode::Opnd,
-                                    .ty = T_I32,
+                                    .ty = T_SAME,
                                     .opc = InstrOpcode::OP_NONE,
                                     .opnd = OperandKind::OK_FRAME_SLOT
                                 }
@@ -186,14 +276,403 @@ namespace ucb::x64
                 },
                 .reps = {
                     {
-                        .ty = T_I32,
+                        .ty = T_SAME,
                         .opc = OPC_MOVE_RR,
                         .opnds = {-1, 0}
                     },
                     {
-                        .ty = T_I32,
-                        .opc = OPC_ADD_RM,
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
                         .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // add mem with signed integer register (2)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 1}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
+                        .opnds = {-1, 0},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // add mem with unsigned integer register (1)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // add mem with unsigned integer register (2)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_ADD,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 1}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_ADD,
+                        .opnds = {-1, 0},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub 2 signed integer registers
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub 2 unsigned integer registers
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub mem with signed integer register (1)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub mem with signed integer register (2)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_I,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 1}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 0},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub mem with unsigned integer register (1)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        },
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 0}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 1},
+                        .def_is_also_use = true
+                    }
+                }
+            },
+            // sub mem with unsigned integer register (2)
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_SUB,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds = {
+                        {
+                            .kind = PatNode::Inst,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_LOAD,
+                            .opnd = OperandKind::OK_POISON,
+                            .opnds = {
+                                {
+                                    .kind = PatNode::Opnd,
+                                    .ty = T_SAME,
+                                    .opc = InstrOpcode::OP_NONE,
+                                    .opnd = OperandKind::OK_FRAME_SLOT
+                                }
+                            }
+                        },
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_MOVE_RR,
+                        .opnds = {-1, 1}
+                    },
+                    {
+                        .ty = T_SAME,
+                        .opc = OPC_SUB,
+                        .opnds = {-1, 0},
                         .def_is_also_use = true
                     }
                 }
@@ -203,14 +682,14 @@ namespace ucb::x64
                 .cost = 1,
                 .pat = {
                     .kind = PatNode::Inst,
-                    .ty = T_I32,
+                    .ty = T_ANY_I,
                     .opc = InstrOpcode::OP_RET,
                     .opnd = OperandKind::OK_POISON,
                     .opnds =
                     {
                         {
                             .kind = PatNode::Opnd,
-                            .ty = T_I32,
+                            .ty = T_SAME,
                             .opc = InstrOpcode::OP_NONE,
                             .opnd = OperandKind::OK_VIRTUAL_REG,
                         }
@@ -218,7 +697,33 @@ namespace ucb::x64
                 },
                 .reps = {
                     {
-                        .ty = T_I32,
+                        .ty = T_SAME,
+                        .opc = OPC_RET,
+                        .opnds = {0}
+                    }
+                }
+            },
+            // return an unsigned integer register
+            {
+                .cost = 1,
+                .pat = {
+                    .kind = PatNode::Inst,
+                    .ty = T_ANY_U,
+                    .opc = InstrOpcode::OP_RET,
+                    .opnd = OperandKind::OK_POISON,
+                    .opnds =
+                    {
+                        {
+                            .kind = PatNode::Opnd,
+                            .ty = T_SAME,
+                            .opc = InstrOpcode::OP_NONE,
+                            .opnd = OperandKind::OK_VIRTUAL_REG,
+                        }
+                    }
+                },
+                .reps = {
+                    {
+                        .ty = T_SAME,
                         .opc = OPC_RET,
                         .opnds = {0}
                     }
@@ -337,28 +842,12 @@ namespace ucb::x64
                 out << "mov_rm\t";
                 break;
 
-            case OPC_ADD_RR:
-                out << "add_rr\t";
+            case OPC_ADD:
+                out << "add\t";
                 break;
 
-            case OPC_ADD_MR:
-                out << "add_mr\t";
-                break;
-
-            case OPC_ADD_RM:
-                out << "add_rm\t";
-                break;
-
-            case OPC_SUB_RR:
-                out << "sub_rr\t";
-                break;
-
-            case OPC_SUB_RM:
-                out << "sub_rm\t";
-                break;
-
-            case OPC_SUB_MR:
-                out << "sub_mr\t";
+            case OPC_SUB:
+                out << "sub\t";
                 break;
 
             case OPC_JMP:
@@ -533,11 +1022,12 @@ namespace ucb::x64
                 mov.opnds.push_back(out_ret);
 
                 auto& ret = machine_insts.emplace_back(OPC_RET);
+                /*
                 ret.opnds.push_back({
                     .kind = MachineOperand::Register,
                     .ty = out_ret.ty,
                     .val = std::bit_cast<std::uint64_t>(reg)
-                });
+                });*/
             }
         }
     }
@@ -635,7 +1125,7 @@ namespace ucb::x64
 
             // increase stack
             MachineInstruction update_rsp;
-            update_rsp.opc = OPC_SUB_RR;
+            update_rsp.opc = OPC_SUB;
             update_rsp.size = RSP.size;
             auto ty = T_ANY_I;
             ty.size = RSP.size;
@@ -752,7 +1242,7 @@ namespace ucb::x64
 
             // restore rsp
             MachineInstruction restore_rsp;
-            restore_rsp.opc = OPC_ADD_RR;
+            restore_rsp.opc = OPC_ADD;
             restore_rsp.size = RSP.size;
             auto ty = T_ANY_I;
             ty.size = RSP.size;

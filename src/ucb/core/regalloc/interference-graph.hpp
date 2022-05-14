@@ -41,7 +41,7 @@ namespace ucb
         bool can_simplify();
         // bool can_coalesce();
 
-        std::set<MachineInstruction*> coalesce(int k);
+        std::pair<bool, std::set<MachineInstruction*>> coalesce(int k);
         bool freeze_move();
         std::optional<IGNode> pop_node(int k);
         std::optional<IGNode> pop_highest_degree();

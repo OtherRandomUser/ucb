@@ -1,0 +1,24 @@
+insts to mdc
+    br
+    cmp
+    brc
+    sub
+    mul *
+    div *
+    rem *
+    cp *
+    not *
+    and **
+    or **
+    xor **
+    shl **
+    shr **
+    ** fix multiple reads on dag
+    ** fix live outs on dag
+
+implement sort with uir
+
+implement imms
+implement fcals
+implement arrays
+implement floats

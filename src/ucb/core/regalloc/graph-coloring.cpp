@@ -52,9 +52,9 @@ namespace  ucb
                     }
 
                     // coalesce
-                    auto mvs = ig.coalesce(k);
+                    auto [coalesce_res, mvs] = ig.coalesce(k);
 
-                    if (!mvs.empty())
+                    if (coalesce_res)
                     {
                         std::cout << "coalesced removing " << mvs.size() << " moves:" << std::endl;
                         ig.dump();

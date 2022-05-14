@@ -198,19 +198,27 @@ namespace ucb
         return it == nodes.end();
     }
 */
-    std::set<MachineInstruction*> InterferenceGraph::coalesce(int k)
+    std::pair<bool, std::set<MachineInstruction*>> InterferenceGraph::coalesce(int k)
     {
         std::set<MachineInstruction*> res;
-        if (nodes.empty()) { return res; }
+        if (nodes.empty()) { return std::make_pair(false, res); }
+
+        std::cout << "coalesce" << std::endl;
 
         auto it = nodes.begin();
 
         while (it != nodes.end())
         {
+            std::cout << "loop" << std::endl;
+
             if (!it->moves.empty())
             {
+                std::cout << "node has moves" << std::endl;
+
                 for (auto mv: it->moves)
                 {
+                    std::cout << "loop 2" << std::endl;
+
                     // TODO will crash when a node is skipped
                     auto itb = std::find_if(
                         it + 1,
@@ -240,9 +248,10 @@ namespace ucb
                     if (it->physical_register != NO_REG
                         && itb->physical_register != NO_REG)
                     {
+                        std::cout << "phys regs" << std::endl;
                         it->moves.erase(mv);
                         itb->moves.erase(mv);
-                        continue;
+                        return std::make_pair(true, res);
                     }
 
                     if (briggs(*it, *itb, k))
@@ -276,7 +285,7 @@ namespace ucb
                         }
 
                         nodes.erase(itb);
-                        return res;
+                        return std::make_pair(true, res);
                     }
                 }
             }
@@ -284,7 +293,7 @@ namespace ucb
             ++it;
         }
 
-        return res;
+        return std::make_pair(false, res);
     }
 
     bool InterferenceGraph::freeze_move()

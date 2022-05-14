@@ -22,6 +22,7 @@ namespace ucb
     };
 
     constexpr TypeID T_ERROR = { -10, 0 };
+    constexpr TypeID T_NONE = { -5, 0 };
 
     constexpr TypeID T_VOID = { 0, 64 };
     constexpr TypeID T_STATIC_ADDRESS = { 1, 64 };
@@ -44,31 +45,10 @@ namespace ucb
     constexpr TypeID T_F32 = { 5, 32 };
     constexpr TypeID T_F64 = { 5, 64 };
 
+    const TypeID T_SAME = { 6, 0 };
+
     constexpr std::int64_t COMP_TY_START = 10;
 
-/*
-    enum TypeID : int
-    {
-        T_ERROR = -10,
-
-        T_VOID = 0,
-        T_STATIC_ADDRESS,
-
-        T_BOOL,
-        T_U8,
-        T_U16,
-        T_U32,
-        T_U64,
-        T_I8,
-        T_I16,
-        T_I32,
-        T_I64,
-        T_F32,
-        T_F64,
-    };
-
-    constexpr TypeID COMP_TY_START = static_cast<TypeID>(20);
-*/
     class CompositeType
     {
     public:

@@ -28,7 +28,7 @@ namespace ucb
 
         std::vector<PatNode> opnds;
 
-        MatchResult match(std::shared_ptr<DagNode> n);
+        MatchResult match(std::shared_ptr<DagNode> n, TypeID same_ty);
         void get_args(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>>& args);
     };
 
@@ -39,8 +39,6 @@ namespace ucb
         std::vector<std::int8_t> opnds;
 
         bool def_is_also_use{false};
-
-        //std::list<MachineInstruction> replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args);
     };
 
     struct Pat

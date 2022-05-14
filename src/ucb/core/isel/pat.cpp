@@ -2,22 +2,53 @@
 
 namespace ucb
 {
+    bool match_ty(TypeID node_ty, TypeID pat_ty)
+    {
+        if (pat_ty.val == node_ty.val)
+        {
+            if (pat_ty.size == 0)
+            {
+                return true;
+            }
+            else
+            {
+                return pat_ty.size == node_ty.size;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     MatchResult Pat::match(std::shared_ptr<DagNode> n)
     {
         assert(n);
-        return pat.match(n);
+        return pat.match(n, T_NONE);
     }
 
-    MatchResult PatNode::match(std::shared_ptr<DagNode> n)
+    MatchResult PatNode::match(std::shared_ptr<DagNode> n, TypeID same_ty)
     {
         assert(n);
         MatchResult res;
         res.is_match = false;
 
+        TypeID pat_ty = ty;
+
+        if (ty == T_SAME)
+        {
+            pat_ty = same_ty;
+        }
+
         // TODO relax to is supper of so that pointers work
-        if (ty != n->ty())
+        if (!match_ty(n->ty(), pat_ty))
         {
             return res;
+        }
+
+        if (same_ty == T_NONE)
+        {
+            same_ty = n->ty();
         }
 
         if (kind == PatNode::Inst)
@@ -39,7 +70,7 @@ namespace ucb
 
             while (ita != opnds.end() && itb != args.end())
             {
-                auto match_res = ita->match(*itb);
+                auto match_res = ita->match(*itb, same_ty);
 
                 if (!match_res.is_match)
                 {
