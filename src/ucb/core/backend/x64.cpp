@@ -13,7 +13,54 @@ namespace ucb::x64
         {OPC_MOVE_RM, "\tmov\t"},
         {OPC_ADD, "\tadd\t"},
         {OPC_SUB, "\tsub\t"},
+        {OPC_MUL, "\tmul\t"},
+        {OPC_IMUL, "\timul\t"},
+        {OPC_DIV, "\tdiv\t"},
+        {OPC_IDIV, "\tidiv\t"},
+        {OPC_NOT, "\tnot\t"},
+        {OPC_AND, "\tand\t"},
+        {OPC_OR, "\tor\t"},
+        {OPC_XOR, "\txor\t"},
+        {OPC_SHL, "\tshl\t"},
+        {OPC_SHR, "\tshr\t"},
+        {OPC_CMP, "\tcmp\t"},
+        {OPC_SETE, "\tsete\t"},
+        {OPC_SETNE, "\tsetne\t"},
+        {OPC_SETB, "\tsetb\t"},
+        {OPC_SETNB, "\tsetnb\t"},
+        {OPC_SETL, "\tsetl\t"},
+        {OPC_SETNL, "\tsetnl\t"},
+        {OPC_SETBE, "\tsetbe\t"},
+        {OPC_SETNBE, "\tsetnbe\t"},
+        {OPC_SETLE, "\tsetle\t"},
+        {OPC_SETNLE, "\tsetnle\t"},
+        {OPC_SETA, "\tseta\t"},
+        {OPC_SETNA, "\tsetna\t"},
+        {OPC_SETG, "\tsetg\t"},
+        {OPC_SETNG, "\tsetng\t"},
+        {OPC_SETAE, "\tsetae\t"},
+        {OPC_SETNAE, "\tsetnae\t"},
+        {OPC_SETGE, "\tsetge\t"},
+        {OPC_SETNGE, "\tsetnge\t"},
         {OPC_JMP, "\tjmp\t"},
+        {OPC_JE, "\tje\t"},
+        {OPC_JNE, "\tjne\t"},
+        {OPC_JB, "\tjb\t"},
+        {OPC_JNB, "\tjnb\t"},
+        {OPC_JL, "\tjl\t"},
+        {OPC_JNL, "\tjnl\t"},
+        {OPC_JBE, "\tjbe\t"},
+        {OPC_JNBE, "\tjnbe\t"},
+        {OPC_JLE, "\tjle\t"},
+        {OPC_JNLE, "\tjnle\t"},
+        {OPC_JA, "\tja\t"},
+        {OPC_JNA, "\tjna\t"},
+        {OPC_JG, "\tjg\t"},
+        {OPC_JNG, "\tjng\t"},
+        {OPC_JAE, "\tjae\t"},
+        {OPC_JNAE, "\tjnae\t"},
+        {OPC_JGE, "\tjge\t"},
+        {OPC_JNGE, "\tjnge\t"},
         {OPC_PUSH, "\tpush\t"},
         {OPC_POP, "\tpop\t"},
     }};
@@ -51,684 +98,951 @@ namespace ucb::x64
         {std::bit_cast<std::uint64_t>(E15), "e15"},
     }};
 
+#define PAT_REG_OPND                        \
+    {                                       \
+        .kind = PatNode::Opnd,              \
+        .ty = T_SAME,                       \
+        .opc = InstrOpcode::OP_NONE,        \
+        .opnd = OperandKind::OK_VIRTUAL_REG \
+    }
+
+#define PAT_REG_OPND_T(TY)                  \
+    {                                       \
+        .kind = PatNode::Opnd,              \
+        .ty = TY,                           \
+        .opc = InstrOpcode::OP_NONE,        \
+        .opnd = OperandKind::OK_VIRTUAL_REG \
+    }
+
+#define PAT_SLOT_OPND                       \
+    {                                       \
+        .kind = PatNode::Opnd,              \
+        .ty = T_SAME,                       \
+        .opc = InstrOpcode::OP_NONE,        \
+        .opnd = OperandKind::OK_FRAME_SLOT  \
+    }
+
+#define PAT_BBLOCK_OPND                     \
+    {                                       \
+        .kind = PatNode::Opnd,              \
+        .ty = T_STATIC_ADDRESS,             \
+        .opc = InstrOpcode::OP_NONE,        \
+        .opnd = OperandKind::OK_BASIC_BLOCK \
+    }
+
+#define INST_PAT_NODE(TY, OP, ...)      \
+    {                                   \
+        .kind = PatNode::Inst,          \
+        .ty = TY,                       \
+        .opc = InstrOpcode::OP,         \
+        .opnd = OperandKind::OK_POISON, \
+        .opnds = { __VA_ARGS__ }        \
+    }
+
+#define INST_PAT_NODE_ID(TY, OP, ID, ...)   \
+    {                                       \
+        .kind = PatNode::Inst,              \
+        .ty = TY,                           \
+        .opc = InstrOpcode::OP,             \
+        .opnd = OperandKind::OK_POISON,     \
+        .id = #ID,                          \
+        .opnds = { __VA_ARGS__ }            \
+    }
+
+#define LOAD_PAT_NODE(TY)           INST_PAT_NODE(TY, OP_LOAD, PAT_SLOT_OPND)
+#define RET_PAT_NODE(TY, ARG)       INST_PAT_NODE(TY, OP_RET, ARG) 
+#define ADD_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_ADD, LHS, RHS)
+#define SUB_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_SUB, LHS, RHS)
+#define MUL_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_MUL, LHS, RHS)
+#define NOT_PAT_NODE(TY, ARG)       INST_PAT_NODE(TY, OP_NOT, ARG)
+#define MUL_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_MUL, LHS, RHS)
+#define AND_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_AND, LHS, RHS)
+#define OR_PAT_NODE(TY, LHS, RHS)   INST_PAT_NODE(TY, OP_OR, LHS, RHS)
+#define XOR_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_XOR, LHS, RHS)
+#define SHL_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_SHL, LHS, RHS)
+#define SHR_PAT_NODE(TY, LHS, RHS)  INST_PAT_NODE(TY, OP_SHR, LHS, RHS)
+
+#define CMP_EQ_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, eq, LHS, RHS)
+#define CMP_NE_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, ne, LHS, RHS)
+#define CMP_LT_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, lt, LHS, RHS)
+#define CMP_LE_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, le, LHS, RHS)
+#define CMP_GT_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, gt, LHS, RHS)
+#define CMP_GE_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, ge, LHS, RHS)
+
+#define BR_PAT_NODE(ARG)        INST_PAT_NODE(T_NONE, OP_BR, ARG)
+#define BRC_PAT_NODE(CND, T, F) INST_PAT_NODE(T_NONE, OP_BRC, CND, T, F)
+
+#define REP_NODE(TY, OPC, ...)  \
+    {                           \
+        .ty = TY,               \
+        .opc = OPC,             \
+        .opnds = {__VA_ARGS__}  \
+    }
+
+#define BIN_NODE(TY, OPC, ...)      \
+    {                               \
+        .ty = TY,                   \
+        .opc = OPC,                 \
+        .opnds = {__VA_ARGS__} ,    \
+        .def_is_also_use = true     \
+    }
+
+#define REP_MOVE_RM(...) REP_NODE(T_SAME, OPC_MOVE_RM, __VA_ARGS__)
+#define REP_MOVE_MR(...) REP_NODE(T_SAME, OPC_MOVE_MR, __VA_ARGS__)
+#define REP_MOVE_RR(...) REP_NODE(T_SAME, OPC_MOVE_RR, __VA_ARGS__)
+#define REP_RET(...)     REP_NODE(T_SAME, OPC_RET,     __VA_ARGS__)
+#define REP_ADD(...)     BIN_NODE(T_SAME, OPC_ADD,     __VA_ARGS__)
+#define REP_SUB(...)     BIN_NODE(T_SAME, OPC_SUB,     __VA_ARGS__)
+#define REP_MUL(...)     BIN_NODE(T_SAME, OPC_MUL,     __VA_ARGS__)
+#define REP_IMUL(...)    BIN_NODE(T_SAME, OPC_IMUL,    __VA_ARGS__)
+#define REP_NOT(...)     BIN_NODE(T_SAME, OPC_NOT,     __VA_ARGS__)
+#define REP_AND(...)     BIN_NODE(T_SAME, OPC_AND,     __VA_ARGS__)
+#define REP_OR(...)      BIN_NODE(T_SAME, OPC_OR,      __VA_ARGS__)
+#define REP_XOR(...)     BIN_NODE(T_SAME, OPC_XOR,     __VA_ARGS__)
+#define REP_SHL(...)     BIN_NODE(T_SAME, OPC_SHL,     __VA_ARGS__)
+#define REP_SHR(...)     BIN_NODE(T_SAME, OPC_SHR,     __VA_ARGS__)
+#define REP_CMP(...)     REP_NODE(T_SAME, OPC_CMP,     __VA_ARGS__)
+
+#define REP_SETE(...)    REP_NODE(T_BOOL, OPC_SETE,    __VA_ARGS__)
+#define REP_SETNE(...)   REP_NODE(T_BOOL, OPC_SETNE,   __VA_ARGS__)
+#define REP_SETB(...)    REP_NODE(T_BOOL, OPC_SETB,    __VA_ARGS__)
+#define REP_SETNB(...)   REP_NODE(T_BOOL, OPC_SETNB,   __VA_ARGS__)
+#define REP_SETL(...)    REP_NODE(T_BOOL, OPC_SETL,    __VA_ARGS__)
+#define REP_SETNL(...)   REP_NODE(T_BOOL, OPC_SETNL,   __VA_ARGS__)
+#define REP_SETBE(...)   REP_NODE(T_BOOL, OPC_SETBE,   __VA_ARGS__)
+#define REP_SETNBE(...)  REP_NODE(T_BOOL, OPC_SETNBE,  __VA_ARGS__)
+#define REP_SETLE(...)   REP_NODE(T_BOOL, OPC_SETLE,   __VA_ARGS__)
+#define REP_SETNLE(...)  REP_NODE(T_BOOL, OPC_SETNLE,  __VA_ARGS__)
+#define REP_SETA(...)    REP_NODE(T_BOOL, OPC_SETA,    __VA_ARGS__)
+#define REP_SETNA(...)   REP_NODE(T_BOOL, OPC_SETNA,   __VA_ARGS__)
+#define REP_SETG(...)    REP_NODE(T_BOOL, OPC_SETG,    __VA_ARGS__)
+#define REP_SETNG(...)   REP_NODE(T_BOOL, OPC_SETNG,   __VA_ARGS__)
+#define REP_SETAE(...)   REP_NODE(T_BOOL, OPC_SETAE,   __VA_ARGS__)
+#define REP_SETNAE(...)  REP_NODE(T_BOOL, OPC_SETNAE,  __VA_ARGS__)
+#define REP_SETGE(...)   REP_NODE(T_BOOL, OPC_SETGE,   __VA_ARGS__)
+#define REP_SETNGE(...)  REP_NODE(T_BOOL, OPC_SETNGE,  __VA_ARGS__)
+
+#define REP_JMP(...)     REP_NODE(T_SAME, OPC_JMP,     __VA_ARGS__)
+
+#define REP_JE(...)      REP_NODE(T_BOOL, OPC_JE,      __VA_ARGS__)
+#define REP_JNE(...)     REP_NODE(T_BOOL, OPC_JNE,     __VA_ARGS__)
+#define REP_JB(...)      REP_NODE(T_BOOL, OPC_JB,      __VA_ARGS__)
+#define REP_JNB(...)     REP_NODE(T_BOOL, OPC_JNB,     __VA_ARGS__)
+#define REP_JL(...)      REP_NODE(T_BOOL, OPC_JL,      __VA_ARGS__)
+#define REP_JNL(...)     REP_NODE(T_BOOL, OPC_JNL,     __VA_ARGS__)
+#define REP_JBE(...)     REP_NODE(T_BOOL, OPC_JBE,     __VA_ARGS__)
+#define REP_JNBE(...)    REP_NODE(T_BOOL, OPC_JNBE,    __VA_ARGS__)
+#define REP_JLE(...)     REP_NODE(T_BOOL, OPC_JLE,     __VA_ARGS__)
+#define REP_JNLE(...)    REP_NODE(T_BOOL, OPC_JNLE,    __VA_ARGS__)
+#define REP_JA(...)      REP_NODE(T_BOOL, OPC_JA,      __VA_ARGS__)
+#define REP_JNA(...)     REP_NODE(T_BOOL, OPC_JNA,     __VA_ARGS__)
+#define REP_JG(...)      REP_NODE(T_BOOL, OPC_JG,      __VA_ARGS__)
+#define REP_JNG(...)     REP_NODE(T_BOOL, OPC_JNG,     __VA_ARGS__)
+#define REP_JAE(...)     REP_NODE(T_BOOL, OPC_JAE,     __VA_ARGS__)
+#define REP_JNAE(...)    REP_NODE(T_BOOL, OPC_JNAE,    __VA_ARGS__)
+#define REP_JGE(...)     REP_NODE(T_BOOL, OPC_JGE,     __VA_ARGS__)
+#define REP_JNGE(...)    REP_NODE(T_BOOL, OPC_JNGE,    __VA_ARGS__)
+
+#define LOAD_PAT(COST, TY)                  \
+    {                                       \
+        .cost = COST,                       \
+        .pat = LOAD_PAT_NODE(TY),           \
+        .reps = { REP_MOVE_RM(-1, 0) }      \
+    }
+
+#define STORE_PAT(COST, TY)                             \
+    {                                                   \
+        .cost = COST,                                   \
+        .pat = {                                        \
+            .kind = PatNode::Inst,                      \
+            .ty = TY,                                   \
+            .opc = InstrOpcode::OP_STORE,               \
+            .opnd = OperandKind::OK_POISON,             \
+            .opnds = { PAT_SLOT_OPND, PAT_REG_OPND }    \
+        },                                              \
+        .reps = { REP_MOVE_MR(0, 1) }                   \
+    }
+
+#define ADD_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = ADD_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_ADD(-1, 1) }          \
+    }
+
+#define ADD_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = ADD_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_ADD(-1, 1) }                  \
+    }
+
+#define ADD_MR_PAT(COST, TY) \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = ADD_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_ADD(-1, 1) }                  \
+    }
+
+#define SUB_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = SUB_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SUB(-1, 1) }          \
+    }
+
+#define SUB_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SUB_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SUB(-1, 1) }                  \
+    }
+
+#define SUB_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SUB_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SUB(-1, 1) }                  \
+    }
+
+#define MUL_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = MUL_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_MUL(-1, 1) }          \
+    }
+
+#define MUL_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = MUL_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_MUL(-1, 1) }                  \
+    }
+
+#define MUL_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = MUL_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_MUL(-1, 1) }                  \
+    }
+
+#define IMUL_RR_PAT(COST, TY)                                   \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = MUL_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_IMUL(-1, 1) }         \
+    }
+
+#define IMUL_RM_PAT(COST, TY)                                           \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = MUL_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_IMUL(-1, 1) }                 \
+    }
+
+#define IMUL_MR_PAT(COST, TY)                                           \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = MUL_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_IMUL(-1, 1) }                 \
+    }
+
+#define AND_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = AND_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_AND(-1, 1) }          \
+    }
+
+#define AND_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = AND_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_AND(-1, 1) }                  \
+    }
+
+#define AND_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = AND_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_AND(-1, 1) }                  \
+    }
+
+#define OR_RR_PAT(COST, TY)                                 \
+    {                                                       \
+        .cost = COST,                                       \
+        .pat = OR_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND), \
+        .reps = { REP_MOVE_RR(-1, 0), REP_OR(-1, 1) }       \
+    }
+
+#define OR_RM_PAT(COST, TY)                                             \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = OR_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_OR(-1, 1) }                   \
+    }
+
+#define OR_MR_PAT(COST, TY)                                             \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = OR_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_OR(-1, 1) }                   \
+    }
+
+#define XOR_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = XOR_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_XOR(-1, 1) }          \
+    }
+
+#define XOR_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = XOR_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_XOR(-1, 1) }                  \
+    }
+
+#define XOR_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = XOR_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_XOR(-1, 1) }                  \
+    }
+
+#define SHL_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = SHL_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHL(-1, 1) }          \
+    }
+
+#define SHL_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SHL_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHL(-1, 1) }                  \
+    }
+
+#define SHL_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SHL_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHL(-1, 1) }                  \
+    }
+
+#define SHR_RR_PAT(COST, TY)                                    \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = SHR_PAT_NODE(TY, PAT_REG_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHR(-1, 1) }          \
+    }
+
+#define SHR_RM_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SHR_PAT_NODE(TY, PAT_REG_OPND, LOAD_PAT_NODE(T_SAME)),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHR(-1, 1) }                  \
+    }
+
+#define SHR_MR_PAT(COST, TY)                                            \
+    {                                                                   \
+        .cost = COST,                                                   \
+        .pat = SHR_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SHR(-1, 1) }                  \
+    }
+
+#define CMP_EQ_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_EQ_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETE(-1) }                     \
+    }
+
+#define CMP_EQ_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_EQ_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETE(-1) }                             \
+    }
+
+#define CMP_EQ_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_EQ_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETE(-1) }                     \
+    }
+
+#define CMP_NE_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_NE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETNE(-1) }                    \
+    }
+
+#define CMP_NE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_NE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETNE(-1) }                            \
+    }
+
+#define CMP_NE_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_NE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETNE(-1) }                    \
+    }
+
+#define CMP_LT_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETL(-1) }                     \
+    }
+
+#define CMP_LT_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETL(-1) }                             \
+    }
+
+#define CMP_LT_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETL(-1) }                     \
+    }
+
+#define CMP_B_RR_PAT(COST, TY)                                      \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETB(-1) }                     \
+    }
+
+#define CMP_B_RM_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETB(-1) }                             \
+    }
+
+#define CMP_B_MR_PAT(COST, TY)                                      \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETB(-1) }                     \
+    }
+
+#define CMP_LE_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETLE(-1) }                    \
+    }
+
+#define CMP_LE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETLE(-1) }                            \
+    }
+
+#define CMP_LE_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETLE(-1) }                    \
+    }
+
+#define CMP_BE_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETBE(-1) }                    \
+    }
+
+#define CMP_BE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETBE(-1) }                            \
+    }
+
+#define CMP_BE_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_LE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETBE(-1) }                    \
+    }
+
+#define CMP_GT_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETG(-1) }                     \
+    }
+
+#define CMP_GT_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETG(-1) }                             \
+    }
+
+#define CMP_GT_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETG(-1) }                     \
+    }
+
+#define CMP_A_RR_PAT(COST, TY)                                      \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETA(-1) }                     \
+    }
+
+#define CMP_A_RM_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETA(-1) }                             \
+    }
+
+#define CMP_A_MR_PAT(COST, TY)                                      \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETA(-1) }                     \
+    }
+
+#define CMP_GE_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETGE(-1) }                    \
+    }
+
+#define CMP_GE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETGE(-1) }                            \
+    }
+
+#define CMP_GE_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETGE(-1) }                    \
+    }
+
+#define CMP_AE_RR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETAE(-1) }                    \
+    }
+
+#define CMP_AE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)),  \
+        .reps = { REP_CMP(0, 1), REP_SETAE(-1) }                            \
+    }
+
+#define CMP_AE_MR_PAT(COST, TY)                                     \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = CMP_GE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
+        .reps = { REP_CMP(0, 1), REP_SETAE(-1) }                    \
+    }
+
+
+#define BRC_EQ_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_EQ_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JE(2), REP_JMP(3) }        \
+    }
+
+#define BRC_EQ_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_EQ_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JE(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_EQ_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_EQ_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JE(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_NE_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_NE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JNE(2), REP_JMP(3) }           \
+    }
+
+#define BRC_NE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_NE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JNE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_NE_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_NE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JNE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_LT_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JL(2), REP_JMP(3) }        \
+    }
+
+#define BRC_LT_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JL(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_LT_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JL(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_B_RR_PAT(COST, TY)                                  \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JB(2), REP_JMP(3) }        \
+    }
+
+#define BRC_B_RM_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JB(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_B_MR_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JB(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_LE_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JLE(2), REP_JMP(3) }       \
+    }
+
+#define BRC_LE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JLE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_LE_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JLE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_BE_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JBE(2), REP_JMP(3) }       \
+    }
+
+#define BRC_BE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JBE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_BE_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JBE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_GT_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JG(2), REP_JMP(3) }        \
+    }
+
+#define BRC_GT_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JG(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_GT_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JG(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_A_RR_PAT(COST, TY)                                  \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JA(2), REP_JMP(3) }        \
+    }
+
+#define BRC_A_RM_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JA(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_A_MR_PAT(COST, TY)                                              \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GT_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JA(2), REP_JMP(3) }                    \
+    }
+
+#define BRC_GE_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JGE(2), REP_JMP(3) }       \
+    }
+
+#define BRC_GE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JGE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_GE_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JGE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_AE_RR_PAT(COST, TY)                                 \
+    {                                                           \
+        .cost = COST,                                           \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JAE(2), REP_JMP(3) }       \
+    }
+
+#define BRC_AE_RM_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(PAT_REG_OPND_T(TY), LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JAE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_AE_MR_PAT(COST, TY)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_GE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JAE(2), REP_JMP(3) }                   \
+    }
+
+#define NOT_R_PAT(COST, TY)                         \
+    {                                               \
+        .cost = COST,                               \
+        .pat = NOT_PAT_NODE(TY, PAT_REG_OPND),      \
+        .reps = { REP_MOVE_RR(-1, 0), REP_NOT(-1) } \
+    }
+
+#define BR_PAT(COST)                            \
+    {                                           \
+        .cost = COST,                           \
+        .pat = BR_PAT_NODE(PAT_BBLOCK_OPND),    \
+        .reps = { REP_JMP(0) }                  \
+    }
+
+//#define BRC_PAT(COST, TY)                                                           \
+//    {                                                                               \
+//        .cost = COST,                                                               \
+//        .pat = BRC_PAT_NODE(TY, PAT_REG_OPND, PAT_BBLOCK_OPND, PAT_BBLOCK_OPND),    \
+//        .reps = { REP_JMP(0) }                                                      \
+//    }
+
+#define RET_PAT(COST, TY)                       \
+    {                                           \
+        .cost = COST,                           \
+        .pat = RET_PAT_NODE(TY, PAT_REG_OPND),  \
+        .reps = { REP_RET(0) }                  \
+    }
+
     std::vector<Pat> X64Target::load_pats()
     {
         return std::initializer_list<Pat>
         {
             // single load signed int from frame slot
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_LOAD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_FRAME_SLOT
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RM,
-                        .opnds = {-1, 0}
-                    }
-                }
-            },
+            LOAD_PAT(1, T_ANY_I),
             // single load unsigned int from frame slot
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_LOAD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_FRAME_SLOT
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RM,
-                        .opnds = {-1, 0}
-                    }
-                }
-            },
+            LOAD_PAT(1, T_ANY_U),
             // single store signed int to frame slot
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_STORE,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_FRAME_SLOT
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_MR,
-                        // .opnds = {-1, 0}
-                        .opnds = {0, 1}
-                    }
-                }
-            },
+            STORE_PAT(1, T_ANY_I),
             // single store unsigned int to frame slot
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_STORE,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_FRAME_SLOT
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_MR,
-                        // .opnds = {-1, 0}
-                        .opnds = {0, 1}
-                    }
-                }
-            },
+            STORE_PAT(1, T_ANY_U),
             // add 2 signed integer registers
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, /*0,*/ 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_RR_PAT(1, T_ANY_I),
             // add 2 unsigned integer registers
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, /*0,*/ 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_RR_PAT(1, T_ANY_U),
             // add mem with signed integer register (1)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_RM_PAT(1, T_ANY_I),
             // add mem with signed integer register (2)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 1}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, 0},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_MR_PAT(1, T_ANY_I),
             // add mem with unsigned integer register (1)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_RM_PAT(1, T_ANY_U),
             // add mem with unsigned integer register (2)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_ADD,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 1}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_ADD,
-                        .opnds = {-1, 0},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            ADD_MR_PAT(1, T_ANY_U),
             // sub 2 signed integer registers
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_RR_PAT(1, T_ANY_I),
             // sub 2 unsigned integer registers
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_RR_PAT(1, T_ANY_U),
             // sub mem with signed integer register (1)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_RM_PAT(1, T_ANY_I),
             // sub mem with signed integer register (2)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 1}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 0},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_MR_PAT(1, T_ANY_I),
             // sub mem with unsigned integer register (1)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        },
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 0}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 1},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_RM_PAT(1, T_ANY_U),
             // sub mem with unsigned integer register (2)
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_SUB,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds = {
-                        {
-                            .kind = PatNode::Inst,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_LOAD,
-                            .opnd = OperandKind::OK_POISON,
-                            .opnds = {
-                                {
-                                    .kind = PatNode::Opnd,
-                                    .ty = T_SAME,
-                                    .opc = InstrOpcode::OP_NONE,
-                                    .opnd = OperandKind::OK_FRAME_SLOT
-                                }
-                            }
-                        },
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_MOVE_RR,
-                        .opnds = {-1, 1}
-                    },
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_SUB,
-                        .opnds = {-1, 0},
-                        .def_is_also_use = true
-                    }
-                }
-            },
+            SUB_MR_PAT(1, T_ANY_U),
+            MUL_RR_PAT(1, T_ANY_U),
+            MUL_RM_PAT(1, T_ANY_U),
+            MUL_MR_PAT(1, T_ANY_U),
+            IMUL_RM_PAT(1, T_ANY_I),
+            IMUL_MR_PAT(1, T_ANY_I),
+            IMUL_RR_PAT(1, T_ANY_I),
+            // TODO DIV, must be precolored
+            AND_RM_PAT(1, T_ANY_I),
+            AND_MR_PAT(1, T_ANY_I),
+            AND_RR_PAT(1, T_ANY_I),
+            OR_RM_PAT(1, T_ANY_I),
+            OR_MR_PAT(1, T_ANY_I),
+            OR_RR_PAT(1, T_ANY_I),
+            XOR_RM_PAT(1, T_ANY_I),
+            XOR_MR_PAT(1, T_ANY_I),
+            XOR_RR_PAT(1, T_ANY_I),
+            // TODO must be precolored if using register as RHS
+            //SHL_RM_PAT(1, T_ANY_I),
+            //SHL_MR_PAT(1, T_ANY_I),
+            //SHL_RR_PAT(1, T_ANY_I),
+            //SHR_RM_PAT(1, T_ANY_I),
+            //SHR_MR_PAT(1, T_ANY_I),
+            //SHR_RR_PAT(1, T_ANY_I),
+
+            CMP_EQ_RR_PAT(1, T_ANY_I),
+            CMP_EQ_RM_PAT(1, T_ANY_I),
+            CMP_EQ_MR_PAT(1, T_ANY_I),
+            CMP_EQ_RR_PAT(1, T_ANY_U),
+            CMP_EQ_RM_PAT(1, T_ANY_U),
+            CMP_EQ_MR_PAT(1, T_ANY_U),
+            CMP_NE_RR_PAT(1, T_ANY_I),
+            CMP_NE_RM_PAT(1, T_ANY_I),
+            CMP_NE_MR_PAT(1, T_ANY_I),
+            CMP_NE_RR_PAT(1, T_ANY_U),
+            CMP_NE_RM_PAT(1, T_ANY_U),
+            CMP_NE_MR_PAT(1, T_ANY_U),
+            CMP_LT_RR_PAT(1, T_ANY_I),
+            CMP_LT_RM_PAT(1, T_ANY_I),
+            CMP_LT_MR_PAT(1, T_ANY_I),
+            CMP_B_RR_PAT(1, T_ANY_U),
+            CMP_B_RM_PAT(1, T_ANY_U),
+            CMP_B_MR_PAT(1, T_ANY_U),
+            CMP_LE_RR_PAT(1, T_ANY_I),
+            CMP_LE_RM_PAT(1, T_ANY_I),
+            CMP_LE_MR_PAT(1, T_ANY_I),
+            CMP_BE_RR_PAT(1, T_ANY_U),
+            CMP_BE_RM_PAT(1, T_ANY_U),
+            CMP_BE_MR_PAT(1, T_ANY_U),
+            CMP_GT_RR_PAT(1, T_ANY_I),
+            CMP_GT_RM_PAT(1, T_ANY_I),
+            CMP_GT_MR_PAT(1, T_ANY_I),
+            CMP_A_RR_PAT(1, T_ANY_U),
+            CMP_A_RM_PAT(1, T_ANY_U),
+            CMP_A_MR_PAT(1, T_ANY_U),
+            CMP_GE_RR_PAT(1, T_ANY_I),
+            CMP_GE_RM_PAT(1, T_ANY_I),
+            CMP_GE_MR_PAT(1, T_ANY_I),
+            CMP_AE_RR_PAT(1, T_ANY_U),
+            CMP_AE_RM_PAT(1, T_ANY_U),
+            CMP_AE_MR_PAT(1, T_ANY_U),
+
+            BR_PAT(1),
+            // TODO do after immediates
+            //BRC_PAT(1, T_STATIC_ADDRESS),
+
+            BRC_EQ_RR_PAT(1, T_ANY_I),
+            BRC_EQ_RM_PAT(1, T_ANY_I),
+            BRC_EQ_MR_PAT(1, T_ANY_I),
+            BRC_EQ_RR_PAT(1, T_ANY_U),
+            BRC_EQ_RM_PAT(1, T_ANY_U),
+            BRC_EQ_MR_PAT(1, T_ANY_U),
+            BRC_NE_RR_PAT(1, T_ANY_I),
+            BRC_NE_RM_PAT(1, T_ANY_I),
+            BRC_NE_MR_PAT(1, T_ANY_I),
+            BRC_NE_RR_PAT(1, T_ANY_U),
+            BRC_NE_RM_PAT(1, T_ANY_U),
+            BRC_NE_MR_PAT(1, T_ANY_U),
+            BRC_LT_RR_PAT(1, T_ANY_I),
+            BRC_LT_RM_PAT(1, T_ANY_I),
+            BRC_LT_MR_PAT(1, T_ANY_I),
+            BRC_B_RR_PAT(1, T_ANY_U),
+            BRC_B_RM_PAT(1, T_ANY_U),
+            BRC_B_MR_PAT(1, T_ANY_U),
+            BRC_LE_RR_PAT(1, T_ANY_I),
+            BRC_LE_RM_PAT(1, T_ANY_I),
+            BRC_LE_MR_PAT(1, T_ANY_I),
+            BRC_BE_RR_PAT(1, T_ANY_U),
+            BRC_BE_RM_PAT(1, T_ANY_U),
+            BRC_BE_MR_PAT(1, T_ANY_U),
+            BRC_GT_RR_PAT(1, T_ANY_I),
+            BRC_GT_RM_PAT(1, T_ANY_I),
+            BRC_GT_MR_PAT(1, T_ANY_I),
+            BRC_A_RR_PAT(1, T_ANY_U),
+            BRC_A_RM_PAT(1, T_ANY_U),
+            BRC_A_MR_PAT(1, T_ANY_U),
+            BRC_GE_RR_PAT(1, T_ANY_I),
+            BRC_GE_RM_PAT(1, T_ANY_I),
+            BRC_GE_MR_PAT(1, T_ANY_I),
+            BRC_AE_RR_PAT(1, T_ANY_U),
+            BRC_AE_RM_PAT(1, T_ANY_U),
+            BRC_AE_MR_PAT(1, T_ANY_U),
+
             // return an integer register
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_I,
-                    .opc = InstrOpcode::OP_RET,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds =
-                    {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG,
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_RET,
-                        .opnds = {0}
-                    }
-                }
-            },
+            RET_PAT(1, T_ANY_I),
             // return an unsigned integer register
-            {
-                .cost = 1,
-                .pat = {
-                    .kind = PatNode::Inst,
-                    .ty = T_ANY_U,
-                    .opc = InstrOpcode::OP_RET,
-                    .opnd = OperandKind::OK_POISON,
-                    .opnds =
-                    {
-                        {
-                            .kind = PatNode::Opnd,
-                            .ty = T_SAME,
-                            .opc = InstrOpcode::OP_NONE,
-                            .opnd = OperandKind::OK_VIRTUAL_REG,
-                        }
-                    }
-                },
-                .reps = {
-                    {
-                        .ty = T_SAME,
-                        .opc = OPC_RET,
-                        .opnds = {0}
-                    }
-                }
-            }
+            RET_PAT(1, T_ANY_U),
         };
     }
 
@@ -818,48 +1132,22 @@ namespace ucb::x64
 
     void X64Target::dump_inst(MachineInstruction& inst, std::ostream& out)
     {
-        out << "\t";
-
         switch (inst.opc)
         {
             default:
-                std::cerr << "unreachable" << std::endl;
-                abort();
-
-            case OPC_RET:
-                out << "ret\t";
+                out << OPCS.at(inst.opc);
                 break;
 
             case OPC_MOVE_RR:
-                out << "mov_rr\t";
+                out << "\tmov_rr\t";
                 break;
 
             case OPC_MOVE_MR:
-                out << "mov_mr\t";
+                out << "\tmov_mr\t";
                 break;
 
             case OPC_MOVE_RM:
-                out << "mov_rm\t";
-                break;
-
-            case OPC_ADD:
-                out << "add\t";
-                break;
-
-            case OPC_SUB:
-                out << "sub\t";
-                break;
-
-            case OPC_JMP:
-                out << "jmp\t";
-                break;
-
-            case OPC_PUSH:
-                out << "push\t";
-                break;
-
-            case OPC_POP:
-                out << "pop\t";
+                out << "\tmov_rm\t";
                 break;
         }
 

@@ -25,6 +25,7 @@ namespace ucb
         TypeID ty;
         InstrOpcode opc;
         OperandKind opnd;
+        std::string id;
 
         std::vector<PatNode> opnds;
 

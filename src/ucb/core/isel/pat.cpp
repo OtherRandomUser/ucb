@@ -40,15 +40,19 @@ namespace ucb
             pat_ty = same_ty;
         }
 
-        // TODO relax to is supper of so that pointers work
         if (!match_ty(n->ty(), pat_ty))
         {
             return res;
         }
 
-        if (same_ty == T_NONE)
+        if (same_ty == T_NONE && (n->ty() == T_ANY_U || n->ty() == T_ANY_I || n->ty() == T_ANY_F))
         {
             same_ty = n->ty();
+        }
+
+        if (id != "" && id != n->id())
+        {
+            return res;
         }
 
         if (kind == PatNode::Inst)
