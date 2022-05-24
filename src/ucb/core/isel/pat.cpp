@@ -2,6 +2,11 @@
 
 namespace ucb
 {
+    bool is_child_of(TypeID t, TypeID super)
+    {
+        return t.val == super.val && super.size == 0;
+    }
+
     bool match_ty(TypeID node_ty, TypeID pat_ty)
     {
         if (pat_ty.val == node_ty.val)
@@ -24,34 +29,39 @@ namespace ucb
     MatchResult Pat::match(std::shared_ptr<DagNode> n)
     {
         assert(n);
-        return pat.match(n, T_NONE);
+        auto same_ty = T_NONE;
+        return pat.match(n, same_ty);
     }
 
-    MatchResult PatNode::match(std::shared_ptr<DagNode> n, TypeID same_ty)
+    MatchResult PatNode::match(std::shared_ptr<DagNode> n, TypeID& same_ty)
     {
+        std::cout << "match" << std::endl;
         assert(n);
         MatchResult res;
         res.is_match = false;
 
         TypeID pat_ty = ty;
+        TypeID node_ty = n->ty();
 
         if (ty == T_SAME)
         {
             pat_ty = same_ty;
         }
 
-        if (!match_ty(n->ty(), pat_ty))
+        if (!match_ty(node_ty, pat_ty))
         {
+            std::cout << "types " << n->ty().val << " & " << pat_ty.val << " dont match" << std::endl;
             return res;
         }
 
-        if (same_ty == T_NONE && (n->ty() == T_ANY_U || n->ty() == T_ANY_I || n->ty() == T_ANY_F))
+        if (same_ty == T_NONE && (is_child_of(node_ty, T_ANY_U) || is_child_of(node_ty, T_ANY_I) || is_child_of(node_ty, T_ANY_F)))
         {
-            same_ty = n->ty();
+            same_ty = node_ty;
         }
 
         if (id != "" && id != n->id())
         {
+            std::cout << "ids " << id << " & " << n->id() << " dont match" << std::endl;
             return res;
         }
 
@@ -214,8 +224,10 @@ namespace ucb
                         break;
 
                     case DagDefKind::DDK_ADDR:
-                        assert(false && "unreachable");
-                        // TODO
+                        mop.kind = MachineOperand::BBlockAddress;
+                        mop.val = std::bit_cast<std::uint64_t>(on->bblock_idx());
+                        mop.ty = on->ty();
+                        break;
 
                     case DagDefKind::DDK_ENTRY:
                     case DagDefKind::DDK_EXIT:

@@ -98,12 +98,14 @@ namespace ucb
     {
         auto node = std::find_if(nodes.begin(), nodes.end(), [&](auto& n)
         {
-            auto it = std::find(n.keys.begin(), n.keys.end(), key);
-            return it != n.keys.end();
+            return n.keys.contains(key);
+            //auto it = std::find(n.keys.begin(), n.keys.end(), key);
+            //return it != n.keys.end();
         });
 
         if (node == nodes.end())
         {
+            std::cout << "new node" << std::endl;
             nodes.push_back({
                 .keys = { key }
             });
@@ -467,6 +469,7 @@ namespace ucb
                         std::cout << "live regs:";
                         for (auto lr: live_regs) { std::cout << " " << lr.val; }
                         std::cout << std::endl;
+                        res.get(reg); // single get to make sure its on the graph
                     }
                 }
 

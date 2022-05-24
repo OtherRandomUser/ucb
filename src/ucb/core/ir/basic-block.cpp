@@ -26,7 +26,7 @@ namespace ucb
 
         for (auto bblock: _successors)
         {
-            bblock->compute_live_ins();
+            //bblock->compute_live_ins();
 
             new_live_ins.insert(
                 new_live_ins.begin(),

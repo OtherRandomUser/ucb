@@ -55,7 +55,7 @@ namespace ucb
             {
                 assert(opnd.kind() == OperandKind::OK_BASIC_BLOCK);
 
-                auto bb = get_bblock(opnds.front().get_bblock_idx());
+                auto bb = get_bblock(opnd.get_bblock_idx());
                 assert(bb);
 
                 bblock.successors().push_back(bb);

@@ -191,6 +191,8 @@ namespace  ucb
     {
         for (auto& bblock: proc.bblocks())
         {
+            std::cout << "select on bblock" << std::endl;
+
             for (auto& inst: bblock.machine_insts())
             {
                 for (auto& opnd: inst.opnds)
@@ -202,6 +204,7 @@ namespace  ucb
                     if (!is_physical_reg(reg))
                     {
                         auto p = ig.get(reg).physical_register;
+                        std::cout << "reg " << reg.val << " phys " << p.val << std::endl;
                         opnd.val = std::bit_cast<std::uint64_t>(p);
                     }
                 }

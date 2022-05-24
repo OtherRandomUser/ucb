@@ -42,8 +42,10 @@ namespace ucb
         InstrOpcode opc() const { return _opc; }
         TypeID ty() const { return _ty; }
         RegisterID& reg() { return _reg; }
+        int order() { return _og_order; }
         std::uint64_t& imm_val() { return _imm_val; }
         std::uint64_t& mem_id() { return _mem_id; }
+        std::int64_t& bblock_idx() { return _bblock_idx; }
         const std::string& id() const { return _id; }
         float& cost() { return _cost; }
         int& uses() { return _uses; }
@@ -96,6 +98,7 @@ namespace ucb
         RegisterID _reg{NO_REG};
         // int _imm_id{0};
         std::uint64_t _imm_val{0};
+        std::int64_t _bblock_idx{-1};
         std::uint64_t _mem_id{0};
 
         float _cost{0};
@@ -144,6 +147,13 @@ namespace ucb
             return n;
         }
 
+        std::shared_ptr<DagNode> get_addr(int bblock_idx)
+        {
+            auto n = std::make_shared<DagNode>(-1, InstrOpcode::OP_NONE, DagDefKind::DDK_ADDR, T_STATIC_ADDRESS, "");
+            n->_bblock_idx = bblock_idx;
+            return n;
+        }
+
         void add_def(std::shared_ptr<DagNode> def)
         {
             _all_nodes.push_back(def);
@@ -152,18 +162,23 @@ namespace ucb
             {
                 if (++arg->uses() > 1)
                 {
-                    _root_nodes.insert(arg);
+                    auto it = std::find(_root_nodes.begin(), _root_nodes.end(), def);
+
+                    if (it == _root_nodes.end())
+                    {
+                        _root_nodes.push_back(arg);
+                    }
                 }
             }
         }
 
         void add_root_def(std::shared_ptr<DagNode> def)
         {
-            _root_nodes.insert(def);
+            _root_nodes.push_back(def);
             add_def(std::move(def));
         }
 
-        std::set<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
+        std::vector<std::shared_ptr<DagNode>>& root_nodes() { return _root_nodes; }
 
         void dump(std::ostream& out, CompileUnit& context);
 
@@ -172,7 +187,7 @@ namespace ucb
         // std::shared_ptr<DagNode> _exit;
 
         std::vector<std::shared_ptr<DagNode>> _all_nodes;
-        std::set<std::shared_ptr<DagNode>> _root_nodes;
+        std::vector<std::shared_ptr<DagNode>> _root_nodes;
 
         std::vector<DagMem> _mems;
     };

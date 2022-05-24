@@ -29,7 +29,7 @@ namespace ucb
 
         std::vector<PatNode> opnds;
 
-        MatchResult match(std::shared_ptr<DagNode> n, TypeID same_ty);
+        MatchResult match(std::shared_ptr<DagNode> n, TypeID& same_ty);
         void get_args(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>>& args);
     };
 

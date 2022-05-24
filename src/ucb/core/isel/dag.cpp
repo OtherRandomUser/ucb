@@ -66,14 +66,16 @@ namespace ucb
             break;
 
         case DagDefKind::DDK_ADDR:
-            // TODO
+            context.dump_ty(out, _ty);
+            out << " #" << _bblock_idx << " ";
+            dump_inst();
             break;
 
         case DagDefKind::DDK_ENTRY:
             assert(false && "unreachable");
 
         case DagDefKind::DDK_EXIT:
-            out << "ENTRY ";
+            out << "EXIT ";
             dump_inst();
             break;
         }

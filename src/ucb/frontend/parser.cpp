@@ -316,7 +316,7 @@ namespace ucb::frontend
         _bump();
 
         Operand cnd;
-        if (!_parse_opnd(cnd, T_BOOL, true))
+        if (!_parse_opnd(cnd, T_BOOL, false))
         {
             return false;
         }
@@ -691,7 +691,7 @@ namespace ucb::frontend
         }
 
         // TODO the mode should be separated, but i cant be bothered
-        auto& inst = _bblock->append_instr(InstrOpcode::OP_CMP, ty, std::string(mode.lexema));
+        auto& inst = _bblock->append_instr(InstrOpcode::OP_CMP, T_BOOL, std::string(mode.lexema));
         inst.add_operand(def);
         inst.add_operand(lhs);
         inst.add_operand(rhs);

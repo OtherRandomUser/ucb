@@ -6,6 +6,8 @@ namespace ucb
     {
         for(auto& proc: unit->procs())
         {
+            proc->dump(std::cout);
+
             _isel->run_on_procedure(proc, true);
             _regalloc->run_on_procedure(proc, true);
             _target->stack_lower(*proc);

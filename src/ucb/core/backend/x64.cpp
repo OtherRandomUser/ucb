@@ -169,8 +169,8 @@ namespace ucb::x64
 #define CMP_GT_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, gt, LHS, RHS)
 #define CMP_GE_PAT_NODE(LHS, RHS)  INST_PAT_NODE_ID(T_BOOL, OP_CMP, ge, LHS, RHS)
 
-#define BR_PAT_NODE(ARG)        INST_PAT_NODE(T_NONE, OP_BR, ARG)
-#define BRC_PAT_NODE(CND, T, F) INST_PAT_NODE(T_NONE, OP_BRC, CND, T, F)
+#define BR_PAT_NODE(ARG)        INST_PAT_NODE(T_STATIC_ADDRESS, OP_BR, ARG)
+#define BRC_PAT_NODE(CND, T, F) INST_PAT_NODE(T_STATIC_ADDRESS, OP_BRC, CND, T, F)
 
 #define REP_NODE(TY, OPC, ...)  \
     {                           \
@@ -1614,6 +1614,8 @@ namespace ucb::x64
         {
             auto& proc = *proc_ptr;
 
+            dump_proc(proc, std::cout);
+
             out
                 << "\t.globl\t" << proc.id() << "\n"
                 << "\t.p2align\t4, 0x90\n"
@@ -1665,6 +1667,8 @@ namespace ucb::x64
                                 break;
 
                             case MachineOperand::Register:
+                                std::cout << "!!!!" << opnd.val << std::endl;
+                                out.flush();
                                 out << junc << PHYS_REGS.at(opnd.val);
                                 break;
 

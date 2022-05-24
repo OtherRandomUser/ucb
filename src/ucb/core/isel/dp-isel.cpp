@@ -81,12 +81,14 @@ namespace ucb
                 dk = DagDefKind::DDK_NONE;
             }
 
+            std::cout << "n ty " << inst.ty().val << std::endl;
             auto n = std::make_shared<DagNode>(order++, inst.op(), dk, inst.ty(), inst.id());
 
             for (auto& op: inst.opnds())
             {
                 if (op.is_def())
                 {
+                    std::cout << "nreg " << op.get_virtual_reg() << std::endl;
                     n->reg() = op.get_virtual_reg();
                     continue;
                 }
@@ -99,6 +101,7 @@ namespace ucb
                     assert(false && "unreachable");
 
                 case OperandKind::OK_VIRTUAL_REG:
+                    std::cout << "reg id " << op.get_virtual_reg() << " ty " << op.ty().val << std::endl;
                     arg = dag.get_register(op.get_virtual_reg(), op.ty());
                     n->add_arg(arg);
                     break;
@@ -118,8 +121,9 @@ namespace ucb
                     n->add_arg(arg);
                     break;
 
-                case OperandKind::OK_BASIC_BLOCK:;
-                    // no real need for an operand here
+                case OperandKind::OK_BASIC_BLOCK:
+                    arg = dag.get_addr(op.get_bblock_idx());
+                    n->add_arg(arg);
                 }
             }
 
@@ -144,6 +148,7 @@ namespace ucb
 
         for (auto n: dag.root_nodes())
         {
+            std::cout << "ROOT NODE" << std::endl;
             recursive_match(n, *bblock.context());
         }
 
@@ -161,6 +166,8 @@ namespace ucb
 
     void DynamicISel::recursive_match(std::shared_ptr<DagNode> n, CompileUnit& context)
     {
+        std::cout << "recursive match" << std::endl;
+
         if (n->is_leaf())
         {
             return;
@@ -179,6 +186,7 @@ namespace ucb
 
         for (auto& pat: _pats)
         {
+            std::cout << "pat: " << count++ << std::endl;
             auto res = pat.match(n);
 
             if (res.is_match)
