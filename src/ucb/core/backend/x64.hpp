@@ -27,6 +27,8 @@ namespace ucb::x64
     constexpr MachineOpc OPC_SHR = 16;
     constexpr MachineOpc OPC_CMP = 17;
 
+    constexpr MachineOpc OPC_MOVE_RI = 18;
+
     constexpr MachineOpc OPC_SETE = 21;
     constexpr MachineOpc OPC_SETNE = 22;
     constexpr MachineOpc OPC_SETB = 23;
@@ -68,6 +70,7 @@ namespace ucb::x64
 
     constexpr MachineOpc OPC_PUSH = 101;
     constexpr MachineOpc OPC_POP = 102;
+    constexpr MachineOpc OPC_CALL = 103;
 
     constexpr RegisterID RAX { PREG_START, 64 };
     constexpr RegisterID EAX { RAX.val, 32 };
@@ -116,11 +119,24 @@ namespace ucb::x64
 
     const std::set<RegisterID> CALLER_SAVED_REGS =
     {{
+        RAX,
+        RBX,
+        RCX,
+        RDX,
+        RSI,
+        RDI,
+        R8,
+        R9,
+        R10,
+        R11
     }};
 
     const std::set<RegisterID> CALLEE_SAVED_REGS =
     {
     };
+
+    const RegisterID RETURN_REGISTERS[] = { RAX, RDX };
+    const RegisterID ARG_REGISTERS[] = { RDI, RSI, RDX, RCX, R8, R9 };
 
     class X64Target : public Target
     {

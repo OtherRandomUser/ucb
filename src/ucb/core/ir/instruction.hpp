@@ -16,8 +16,6 @@ namespace ucb
     {
         OK_POISON = 0,
         OK_VIRTUAL_REG,
-        // OT_GLOBAL_VARIABLE,
-        // OT_STRING_LITERAL,
         OK_INTEGER_CONST,
         OK_UNSIGNED_CONST,
         OK_FLOAT_CONST,

@@ -63,6 +63,9 @@ namespace ucb
 
         case DagDefKind::DDK_IMM:
             // TODO
+            context.dump_ty(out, _ty);
+            out << " imm " << _imm_val;
+            dump_inst();
             break;
 
         case DagDefKind::DDK_ADDR:

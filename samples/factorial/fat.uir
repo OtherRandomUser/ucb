@@ -8,7 +8,6 @@ i32  @fat(i32 %n)
 
 if_then:
     ret i32 1
-    br %if_end
 
 if_else:
     %n.1 = load i32 ^i32 %n.ref
@@ -17,7 +16,4 @@ if_else:
     %n.2 = load i32 ^i32 %n.ref
     %tmp.2 = mul i32 %n.2 %tmp.1
     ret i32 %tmp.2
-    br %if_end
-
-if_end:
 }

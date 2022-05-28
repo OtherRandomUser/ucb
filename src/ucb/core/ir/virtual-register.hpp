@@ -15,17 +15,6 @@ namespace ucb
     {
         std::uint64_t val : 54;
         std::uint64_t size : 10;
-/*
-        bool operator != (const RegisterID& other) const
-        {
-            return val != other.val || size != other.size;
-        }
-
-        bool operator == (const RegisterID& other) const
-        {
-            return !(*this != other);
-        }
-        */
 
         bool operator != (const RegisterID& other) const = default;
         bool operator == (const RegisterID& other) const = default;

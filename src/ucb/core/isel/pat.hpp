@@ -26,6 +26,7 @@ namespace ucb
         InstrOpcode opc;
         OperandKind opnd;
         std::string id;
+        bool is_va_pat{false};
 
         std::vector<PatNode> opnds;
 
@@ -40,6 +41,7 @@ namespace ucb
         std::vector<std::int8_t> opnds;
 
         bool def_is_also_use{false};
+        bool is_va_rep{false};
     };
 
     struct Pat

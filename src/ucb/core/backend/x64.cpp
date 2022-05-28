@@ -11,6 +11,7 @@ namespace ucb::x64
         {OPC_MOVE_RR, "\tmov\t"},
         {OPC_MOVE_MR, "\tmov\t"},
         {OPC_MOVE_RM, "\tmov\t"},
+        {OPC_MOVE_RI, "\tmov\t"},
         {OPC_ADD, "\tadd\t"},
         {OPC_SUB, "\tsub\t"},
         {OPC_MUL, "\tmul\t"},
@@ -63,6 +64,7 @@ namespace ucb::x64
         {OPC_JNGE, "\tjnge\t"},
         {OPC_PUSH, "\tpush\t"},
         {OPC_POP, "\tpop\t"},
+        {OPC_CALL, "\tcall\t"}
     }};
 
     static const std::unordered_map<std::uint64_t, std::string> PHYS_REGS = {{
@@ -130,6 +132,14 @@ namespace ucb::x64
         .opnd = OperandKind::OK_BASIC_BLOCK \
     }
 
+#define PAT_IMM_INT_OPND                        \
+    {                                           \
+        .kind = PatNode::Opnd,                  \
+        .ty = T_SAME,                           \
+        .opc = InstrOpcode::OP_NONE,            \
+        .opnd = OperandKind::OK_INTEGER_CONST   \
+    }
+
 #define INST_PAT_NODE(TY, OP, ...)      \
     {                                   \
         .kind = PatNode::Inst,          \
@@ -172,6 +182,15 @@ namespace ucb::x64
 #define BR_PAT_NODE(ARG)        INST_PAT_NODE(T_STATIC_ADDRESS, OP_BR, ARG)
 #define BRC_PAT_NODE(CND, T, F) INST_PAT_NODE(T_STATIC_ADDRESS, OP_BRC, CND, T, F)
 
+#define CALL_PAT_NODE(TY)               \
+    {                                   \
+        .kind = PatNode::Inst,          \
+        .ty = TY,                       \
+        .opc = InstrOpcode::OP_CALL,    \
+        .opnd = OperandKind::OK_POISON, \
+        .is_va_pat = true               \
+    }
+
 #define REP_NODE(TY, OPC, ...)  \
     {                           \
         .ty = TY,               \
@@ -185,6 +204,13 @@ namespace ucb::x64
         .opc = OPC,                 \
         .opnds = {__VA_ARGS__} ,    \
         .def_is_also_use = true     \
+    }
+
+#define REP_CALL(TY)        \
+    {                       \
+        .ty = TY,           \
+        .opc = OPC_CALL,    \
+        .is_va_rep = true   \
     }
 
 #define REP_MOVE_RM(...) REP_NODE(T_SAME, OPC_MOVE_RM, __VA_ARGS__)
@@ -305,6 +331,20 @@ namespace ucb::x64
         .reps = { REP_MOVE_RR(-1, 0), REP_SUB(-1, 1) }                  \
     }
 
+#define SUB_RI_PAT(COST, TY)                                        \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = SUB_PAT_NODE(TY, PAT_REG_OPND, PAT_IMM_INT_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 0), REP_SUB(-1, 1) }              \
+    }
+
+#define SUB_IR_PAT(COST, TY)                                        \
+    {                                                               \
+        .cost = COST,                                               \
+        .pat = SUB_PAT_NODE(TY, PAT_IMM_INT_OPND, PAT_REG_OPND),    \
+        .reps = { REP_MOVE_RR(-1, 1), REP_SUB(-1, 0) }              \
+    }
+
 #define MUL_RR_PAT(COST, TY)                                    \
     {                                                           \
         .cost = COST,                                           \
@@ -323,7 +363,7 @@ namespace ucb::x64
     {                                                                   \
         .cost = COST,                                                   \
         .pat = MUL_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
-        .reps = { REP_MOVE_RR(-1, 0), REP_MUL(-1, 1) }                  \
+        .reps = { REP_MOVE_RR(-1, 1), REP_MUL(-1, 0) }                  \
     }
 
 #define IMUL_RR_PAT(COST, TY)                                   \
@@ -344,7 +384,7 @@ namespace ucb::x64
     {                                                                   \
         .cost = COST,                                                   \
         .pat = MUL_PAT_NODE(TY, LOAD_PAT_NODE(T_SAME), PAT_REG_OPND),   \
-        .reps = { REP_MOVE_RR(-1, 0), REP_IMUL(-1, 1) }                 \
+        .reps = { REP_MOVE_RR(-1, 1), REP_IMUL(-1, 0) }                 \
     }
 
 #define AND_RR_PAT(COST, TY)                                    \
@@ -555,6 +595,20 @@ namespace ucb::x64
         .cost = COST,                                               \
         .pat = CMP_LE_PAT_NODE(LOAD_PAT_NODE(TY), PAT_REG_OPND),    \
         .reps = { REP_CMP(0, 1), REP_SETLE(-1) }                    \
+    }
+
+#define CMP_LE_INT_IM_PAT(COST)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LE_PAT_NODE(PAT_IMM_INT_OPND, LOAD_PAT_NODE(T_SAME)),    \
+        .reps = { REP_CMP(1, 0), REP_SETLE(-1) }                            \
+    }
+
+#define CMP_LE_INT_MI_PAT(COST)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = CMP_LE_PAT_NODE(LOAD_PAT_NODE(T_ANY_I), PAT_IMM_INT_OPND),   \
+        .reps = { REP_CMP(0, 1), REP_SETLE(-1) }                            \
     }
 
 #define CMP_BE_RR_PAT(COST, TY)                                     \
@@ -768,6 +822,20 @@ namespace ucb::x64
         .reps = { REP_CMP(0, 1), REP_JLE(2), REP_JMP(3) }                   \
     }
 
+#define BRC_LE_INT_IM_PAT(COST)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(PAT_IMM_INT_OPND, LOAD_PAT_NODE(T_SAME)), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(1, 0), REP_JLE(2), REP_JMP(3) }                   \
+    }
+
+#define BRC_LE_INT_MI_PAT(COST)                                             \
+    {                                                                       \
+        .cost = COST,                                                       \
+        .pat = BRC_PAT_NODE(CMP_LE_PAT_NODE(LOAD_PAT_NODE(T_ANY_I), PAT_IMM_INT_OPND), PAT_BBLOCK_OPND, PAT_BBLOCK_OPND), \
+        .reps = { REP_CMP(0, 1), REP_JLE(2), REP_JMP(3) }                   \
+    }
+
 #define BRC_BE_RR_PAT(COST, TY)                                 \
     {                                                           \
         .cost = COST,                                           \
@@ -901,6 +969,20 @@ namespace ucb::x64
         .reps = { REP_RET(0) }                  \
     }
 
+#define RET_INT_IMM_PAT(COST)                           \
+    {                                                   \
+        .cost = COST,                                   \
+        .pat = RET_PAT_NODE(T_ANY_I, PAT_IMM_INT_OPND), \
+        .reps = { REP_RET(0) }                          \
+    }
+
+#define CALL_PAT(COST, TY)              \
+    {                                   \
+        .cost = COST,                   \
+        .pat = CALL_PAT_NODE(TY),       \
+        .reps = { REP_CALL(T_SAME) }    \
+    }
+
     std::vector<Pat> X64Target::load_pats()
     {
         return std::initializer_list<Pat>
@@ -937,6 +1019,8 @@ namespace ucb::x64
             SUB_RM_PAT(1, T_ANY_U),
             // sub mem with unsigned integer register (2)
             SUB_MR_PAT(1, T_ANY_U),
+            SUB_RI_PAT(1, T_ANY_I),
+            SUB_IR_PAT(1, T_ANY_I),
             MUL_RR_PAT(1, T_ANY_U),
             MUL_RM_PAT(1, T_ANY_U),
             MUL_MR_PAT(1, T_ANY_U),
@@ -982,6 +1066,8 @@ namespace ucb::x64
             CMP_LE_RR_PAT(1, T_ANY_I),
             CMP_LE_RM_PAT(1, T_ANY_I),
             CMP_LE_MR_PAT(1, T_ANY_I),
+            CMP_LE_INT_IM_PAT(1),
+            CMP_LE_INT_MI_PAT(1),
             CMP_BE_RR_PAT(1, T_ANY_U),
             CMP_BE_RM_PAT(1, T_ANY_U),
             CMP_BE_MR_PAT(1, T_ANY_U),
@@ -1023,6 +1109,8 @@ namespace ucb::x64
             BRC_LE_RR_PAT(1, T_ANY_I),
             BRC_LE_RM_PAT(1, T_ANY_I),
             BRC_LE_MR_PAT(1, T_ANY_I),
+            BRC_LE_INT_IM_PAT(1),
+            BRC_LE_INT_MI_PAT(1),
             BRC_BE_RR_PAT(1, T_ANY_U),
             BRC_BE_RM_PAT(1, T_ANY_U),
             BRC_BE_MR_PAT(1, T_ANY_U),
@@ -1041,8 +1129,11 @@ namespace ucb::x64
 
             // return an integer register
             RET_PAT(1, T_ANY_I),
+            RET_INT_IMM_PAT(1),
             // return an unsigned integer register
             RET_PAT(1, T_ANY_U),
+
+            CALL_PAT(1, T_ANY_I)
         };
     }
 
@@ -1149,6 +1240,10 @@ namespace ucb::x64
             case OPC_MOVE_RM:
                 out << "\tmov_rm\t";
                 break;
+
+            case OPC_MOVE_RI:
+                out << "\tmov_ri\t";
+                break;
         }
 
         auto junc = std::to_string(inst.size) + "\t";
@@ -1224,7 +1319,6 @@ namespace ucb::x64
     void X64Target::abi_lower(Procedure& proc)
     {
         // lower inputs
-
         auto& params = proc.params();
         auto& entry = proc.entry();
 
@@ -1290,7 +1384,7 @@ namespace ucb::x64
         {
             auto& machine_insts = bblock.machine_insts();
 
-            if (machine_insts.back().opc == OPC_RET)
+            if (machine_insts.back().opc == OPC_RET && !machine_insts.back().opnds.empty())
             {
                 auto out_ret = machine_insts.back().opnds.front();
                 machine_insts.pop_back();
@@ -1298,7 +1392,11 @@ namespace ucb::x64
                 RegisterID reg = RAX;
                 reg.size = out_ret.ty.size;
 
-                auto& mov = machine_insts.emplace_back(OPC_MOVE_RR);
+                auto opc = out_ret.kind == MachineOperand::Register
+                        ? OPC_MOVE_RR
+                        : OPC_MOVE_RI;
+
+                auto& mov = machine_insts.emplace_back(opc);
                 mov.size = reg.size;
                 mov.opnds.push_back({
                     .kind = MachineOperand::Register,
@@ -1310,12 +1408,6 @@ namespace ucb::x64
                 mov.opnds.push_back(out_ret);
 
                 auto& ret = machine_insts.emplace_back(OPC_RET);
-                /*
-                ret.opnds.push_back({
-                    .kind = MachineOperand::Register,
-                    .ty = out_ret.ty,
-                    .val = std::bit_cast<std::uint64_t>(reg)
-                });*/
             }
         }
     }
@@ -1472,7 +1564,7 @@ namespace ucb::x64
             // otherwise, add stackdown on new basic block
             else if (rets.size() > 0)
             {
-                auto exit_id = proc.add_bblock("exit");
+                exit_id = proc.add_bblock("exit");
 
                 for (auto id: rets)
                 {
@@ -1496,13 +1588,7 @@ namespace ucb::x64
                 MachineInstruction inst;
                 inst.opc = OPC_RET;
 
-                MachineOperand opnd;
-                opnd.kind = MachineOperand::BBlockAddress;
-                opnd.val = std::bit_cast<std::uint64_t>(RAX);
-                inst.opnds.push_back(opnd);
-
                 exit.machine_insts().push_back(std::move(inst));
-
             }
             else
             {
@@ -1525,7 +1611,7 @@ namespace ucb::x64
                 opnd.val = std::bit_cast<std::uint64_t>(*csc);
                 inst.opnds.push_back(opnd);
 
-                proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(inst));
+                exit.machine_insts().insert(stackdown_insertpoint, std::move(inst));
             }
 
             // restore rsp
@@ -1544,7 +1630,7 @@ namespace ucb::x64
                 .ty = ty,
                 .val = static_cast<std::uint64_t>(stack_size)
             });
-            proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(restore_rsp));
+            exit.machine_insts().insert(stackdown_insertpoint, std::move(restore_rsp));
 
             // restore rsp
             MachineInstruction restore_rbp;
@@ -1554,16 +1640,18 @@ namespace ucb::x64
                 .kind = MachineOperand::Register,
                 .val = std::bit_cast<std::uint64_t>(RBP)
             });
-            proc.entry().machine_insts().insert(stackdown_insertpoint, std::move(restore_rbp));
+            exit.machine_insts().insert(stackdown_insertpoint, std::move(restore_rbp));
         }
 
         // for each function call add stackup & stackdown
         for (auto& bblock: proc.bblocks())
         {
-            for (auto& inst: bblock.machine_insts())
+            auto& m_insts = bblock.machine_insts();
+            auto inst_it = m_insts.begin();
+
+            while (inst_it != m_insts.end())
             {
-                // TODO stack up & down for calls after adding call instructions
-                //
+                auto& inst = *inst_it;
 
                 // replace slot indexes with stack offsts
                 auto it = inst.opnds.begin();
@@ -1596,6 +1684,149 @@ namespace ucb::x64
                         ++it;
                     }
                 }
+
+                // add stack maintenance to function calls
+                if (inst.opc == OPC_CALL)
+                {
+                    auto next_it = inst_it;
+                    ++next_it;
+
+                    // compute live regs at the instructions time
+                    std::set<RegisterID> live_regs;
+                    for (auto& [reg, ty]: bblock.live_outs())
+                    {
+                        live_regs.insert(reg);
+                    }
+
+                    auto rev_it = --m_insts.end();
+                    while (rev_it != inst_it && rev_it != m_insts.begin())
+                    {
+                        for (auto& opnd: rev_it->opnds)
+                        {
+                            if (opnd.kind != MachineOperand::Register)
+                            {
+                                continue;
+                            }
+
+                            auto reg = std::bit_cast<RegisterID>(opnd.val);
+
+                            if (opnd.is_def)
+                            {
+                                live_regs.erase(reg);
+                            }
+                            else
+                            {
+                                live_regs.insert(reg);
+                            }
+                        }
+
+                        --rev_it;
+                    }
+
+                    // preserve caller saved clobbers
+                    for (auto reg: live_regs)
+                    {
+                        if (!CALLER_SAVED_REGS.contains(reg))
+                        {
+                            continue;
+                        }
+
+                        // push register
+                        MachineInstruction inst;
+                        inst.opc = OPC_PUSH;
+                        inst.size = reg.size;
+
+                        MachineOperand opnd;
+                        opnd.kind = MachineOperand::Register;
+                        opnd.val = std::bit_cast<std::uint64_t>(reg);
+                        inst.opnds.push_back(opnd);
+
+                        m_insts.insert(inst_it, inst);
+
+                        // pop register
+                        inst.opnds.clear();
+                        inst.opc = OPC_POP;
+                        inst.size = reg.size;
+
+                        opnd.kind = MachineOperand::Register;
+                        opnd.val = std::bit_cast<std::uint64_t>(reg);
+                        inst.opnds.push_back(opnd);
+
+                        m_insts.insert(next_it, std::move(inst));
+                    }
+
+                    // put everything on the correct registers
+                    for (auto& opnd: inst.opnds)
+                    {
+                        int ret_idx = 0, arg_idx = 0;
+
+                            std::cout << "!!!OPND!!! " << std::endl;
+
+                        if (opnd.is_def)
+                        {
+                            auto ret_reg = RETURN_REGISTERS[arg_idx++];
+
+                            std::cout << "ret!!! " << ret_reg.val << std::endl;
+
+                            if (std::bit_cast<RegisterID>(opnd.val).val != ret_reg.val)
+                            {
+                                MachineInstruction inst;
+                                inst.opc = OPC_MOVE_RR;
+                                inst.size = opnd.ty.size;
+
+                                inst.opnds.push_back(opnd);
+
+                                MachineOperand reg_opnd;
+                                reg_opnd.kind = MachineOperand::Register;
+                                reg_opnd.val = std::bit_cast<std::uint64_t>(ret_reg);
+                                inst.opnds.push_back(reg_opnd);
+
+                                m_insts.insert(inst_it, inst);
+                            }
+                        }
+                        else
+                        {
+                            auto arg_reg = ARG_REGISTERS[arg_idx++];
+
+                            std::cout << "arg!!! " << arg_reg.val << std::endl;
+
+                            auto move_to_arg_reg = [&](auto opc)
+                            {
+                                MachineInstruction inst;
+                                inst.opc = opc;
+                                inst.size = opnd.ty.size;
+
+                                arg_reg.size = inst.size;
+
+                                MachineOperand reg_opnd;
+                                reg_opnd.kind = MachineOperand::Register;
+                                reg_opnd.val = std::bit_cast<std::uint64_t>(arg_reg);
+                                inst.opnds.push_back(reg_opnd);
+
+                                inst.opnds.push_back(opnd);
+                                m_insts.insert(inst_it, inst);
+                            };
+
+                            if (opnd.kind == MachineOperand::Imm)
+                            {
+                                move_to_arg_reg(OPC_MOVE_RI);
+                            }
+                            else if (opnd.kind == MachineOperand::MemAddr)
+                            {
+                                move_to_arg_reg(OPC_MOVE_RM);
+                            }
+                            else if (opnd.kind == MachineOperand::Register && std::bit_cast<RegisterID>(opnd.val).val != arg_reg.val)
+                            {
+                                move_to_arg_reg(OPC_MOVE_RR);
+                            }
+
+                        }
+                    }
+
+                    inst.opnds.clear();
+                }
+
+                ++inst_it;
             }
         }
     }
@@ -1639,6 +1870,12 @@ namespace ucb::x64
                 for (auto& inst: bblock.machine_insts())
                 {
                     out << OPCS.at(inst.opc);
+
+                    if (inst.id != "")
+                    {
+                        out << inst.id << '\t';
+                    }
+
                     std::string junc = "";
 
                     for (auto& opnd: inst.opnds)
@@ -1667,7 +1904,6 @@ namespace ucb::x64
                                 break;
 
                             case MachineOperand::Register:
-                                std::cout << "!!!!" << opnd.val << std::endl;
                                 out.flush();
                                 out << junc << PHYS_REGS.at(opnd.val);
                                 break;

@@ -186,7 +186,6 @@ namespace ucb
 
         for (auto& pat: _pats)
         {
-            std::cout << "pat: " << count++ << std::endl;
             auto res = pat.match(n);
 
             if (res.is_match)

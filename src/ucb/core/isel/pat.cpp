@@ -35,7 +35,6 @@ namespace ucb
 
     MatchResult PatNode::match(std::shared_ptr<DagNode> n, TypeID& same_ty)
     {
-        std::cout << "match" << std::endl;
         assert(n);
         MatchResult res;
         res.is_match = false;
@@ -50,7 +49,6 @@ namespace ucb
 
         if (!match_ty(node_ty, pat_ty))
         {
-            std::cout << "types " << n->ty().val << " & " << pat_ty.val << " dont match" << std::endl;
             return res;
         }
 
@@ -61,7 +59,6 @@ namespace ucb
 
         if (id != "" && id != n->id())
         {
-            std::cout << "ids " << id << " & " << n->id() << " dont match" << std::endl;
             return res;
         }
 
@@ -74,31 +71,50 @@ namespace ucb
 
             auto& args = n->args();
 
-            if (opnds.size() != args.size())
+            if (is_va_pat)
             {
-                return res;
+                for (auto arg: args)
+                {
+                    if (arg->kind() == DagDefKind::DDK_IMM
+                        || arg->kind() == DagDefKind::DDK_REG)
+                    {
+                        res.selected_opnds.push_back(std::move(arg));
+                    }
+                    else
+                    {
+                        std::cerr << "unsuported def kind on varriadic pattern" << std::endl;
+                        abort();
+                    }
+                }
             }
-
-            auto ita = opnds.begin();
-            auto itb = args.begin(); 
-
-            while (ita != opnds.end() && itb != args.end())
+            else
             {
-                auto match_res = ita->match(*itb, same_ty);
-
-                if (!match_res.is_match)
+                if (opnds.size() != args.size())
                 {
                     return res;
                 }
 
-                res.selected_opnds.insert(
-                    res.selected_opnds.end(),
-                    std::make_move_iterator(match_res.selected_opnds.begin()),
-                    std::make_move_iterator(match_res.selected_opnds.end())
-                );
+                auto ita = opnds.begin();
+                auto itb = args.begin(); 
 
-                ita++;
-                itb++;
+                while (ita != opnds.end() && itb != args.end())
+                {
+                    auto match_res = ita->match(*itb, same_ty);
+
+                    if (!match_res.is_match)
+                    {
+                        return res;
+                    }
+
+                    res.selected_opnds.insert(
+                        res.selected_opnds.end(),
+                        std::make_move_iterator(match_res.selected_opnds.begin()),
+                        std::make_move_iterator(match_res.selected_opnds.end())
+                    );
+
+                    ita++;
+                    itb++;
+                }
             }
         }
 
@@ -142,19 +158,31 @@ namespace ucb
 
         if (kind == PatNode::Inst)
         {
-            auto& args_ = n->args();
-
-            assert(opnds.size() == args_.size());
-
-            auto ita = opnds.begin();
-            auto itb = args_.begin(); 
-
-            while (ita != opnds.end() && itb != args_.end())
+            if (is_va_pat)
             {
-                ita->get_args(*itb, args);
+                std::cout << "args size: " << n->args().size() << std::endl;
+                for (auto arg: n->args())
+                {
+                    assert(arg != nullptr);
+                    args.push_back(std::move(arg));
+                }
+            }
+            else
+            {
+                auto& args_ = n->args();
 
-                ita++;
-                itb++;
+                assert(opnds.size() == args_.size());
+
+                auto ita = opnds.begin();
+                auto itb = args_.begin(); 
+
+                while (ita != opnds.end() && itb != args_.end())
+                {
+                    ita->get_args(*itb, args);
+
+                    ita++;
+                    itb++;
+                }
             }
         }
 
@@ -174,68 +202,110 @@ namespace ucb
 
         for (auto& r: reps)
         {
-            std::cout << "inst rep" << std::endl;
             MachineInstruction inst;
 
             inst.opc = r.opc;
             inst.id = n->id();
 
-            for (auto op: r.opnds)
+            auto node2mop = [&](auto& node)
             {
                 MachineOperand mop;
 
-                if (op == -1)
+                switch (node->kind())
                 {
+                case DagDefKind::DDK_NONE:
+                    assert(false && "unreachable");
+
+                case DagDefKind::DDK_REG:
+                    mop.kind = MachineOperand::Register;
+                    mop.val = std::bit_cast<std::uint64_t>(node->reg());
+                    mop.ty = node->ty();
+                    //inst.size = mop.ty.size;
+                    break;
+
+                case DagDefKind::DDK_MEM:
+                    mop.kind = MachineOperand::FrameSlot;
+                    mop.val = node->mem_id();
+                    mop.ty = node->ty();
+                    break;
+
+                case DagDefKind::DDK_IMM:
+                    mop.kind = MachineOperand::Imm;
+                    mop.val = node->imm_val();
+                    mop.ty = node->ty();
+                    break;
+
+                case DagDefKind::DDK_ADDR:
+                    mop.kind = MachineOperand::BBlockAddress;
+                    mop.val = std::bit_cast<std::uint64_t>(node->bblock_idx());
+                    mop.ty = node->ty();
+                    break;
+
+                case DagDefKind::DDK_ENTRY:
+                case DagDefKind::DDK_EXIT:
+                    assert(false && "unreachable");
+                }
+
+                return mop;
+            };
+
+            if (r.is_va_rep)
+            {
+                // add the return value if it exists
+                auto n_ty = n->ty();
+
+                if (n_ty != T_NONE && n_ty != T_STATIC_ADDRESS && n_ty != T_VOID)
+                {
+                    MachineOperand mop;
                     mop.kind = MachineOperand::Register;
                     mop.val = std::bit_cast<std::uint64_t>(n->reg());
                     mop.ty = n->ty();
                     mop.is_def = true;
                     mop.is_use = r.def_is_also_use;
-                    std::cout << "!!! minst size " << mop.ty.size << "!!!" << std::endl;
                     inst.size = mop.ty.size;
+                    inst.opnds.push_back(mop);
                 }
-                else
+
+                for (auto& arg: args)
                 {
-                    auto on = args[op];
+                    auto mop = node2mop(arg);
 
-                    switch (on->kind())
+                    if (mop.ty.size > inst.size)
                     {
-                    case DagDefKind::DDK_NONE:
-                        assert(false && "unreachable");
-
-                    case DagDefKind::DDK_REG:
-                        mop.kind = MachineOperand::Register;
-                        mop.val = std::bit_cast<std::uint64_t>(on->reg());
-                        mop.ty = on->ty();
-                        std::cout << "!!! minst size " << mop.ty.size << "!!!" << std::endl;
                         inst.size = mop.ty.size;
-                        break;
-
-                    case DagDefKind::DDK_MEM:
-                        mop.kind = MachineOperand::FrameSlot;
-                        mop.val = on->mem_id();
-                        mop.ty = on->ty();
-                        break;
-
-                    case DagDefKind::DDK_IMM:
-                        mop.kind = MachineOperand::Imm;
-                        mop.val = on->imm_val();
-                        mop.ty = on->ty();
-                        break;
-
-                    case DagDefKind::DDK_ADDR:
-                        mop.kind = MachineOperand::BBlockAddress;
-                        mop.val = std::bit_cast<std::uint64_t>(on->bblock_idx());
-                        mop.ty = on->ty();
-                        break;
-
-                    case DagDefKind::DDK_ENTRY:
-                    case DagDefKind::DDK_EXIT:
-                        assert(false && "unreachable");
                     }
-                }
 
-                inst.opnds.push_back(std::move(mop));
+                    inst.opnds.push_back(mop);
+                }
+            }
+            else
+            {
+                for (auto op: r.opnds)
+                {
+                    MachineOperand mop;
+
+                    if (op == -1)
+                    {
+                        mop.kind = MachineOperand::Register;
+                        mop.val = std::bit_cast<std::uint64_t>(n->reg());
+                        mop.ty = n->ty();
+                        mop.is_def = true;
+                        mop.is_use = r.def_is_also_use;
+                        inst.size = mop.ty.size;
+                    }
+                    else
+                    {
+                        auto on = args[op];
+                        mop = node2mop(on);
+                    }
+
+                    if (mop.ty.size > inst.size)
+                    {
+                        inst.size = mop.ty.size;
+                    }
+
+                    inst.opnds.push_back(std::move(mop));
+                }
             }
 
             res.push_back(std::move(inst));
@@ -243,15 +313,4 @@ namespace ucb
 
         return res;
     }
-/*
-    std::list<MachineInstruction> RepNode::replace(std::shared_ptr<DagNode> n, std::vector<std::shared_ptr<DagNode>> args)
-    {
-        assert(n);
-        std::list<MachineInstruction> res;
-
-
-
-        return res;
-    }
-*/
 }
