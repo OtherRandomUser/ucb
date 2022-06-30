@@ -6,7 +6,7 @@
 
 #include <ucb/core/ir/instruction.hpp>
 #include <ucb/core/ir/machine-instruction.hpp>
-#include <ucb/core/ir/procedure.hpp>
+//#include <ucb/core/ir/procedure.hpp>
 
 namespace ucb
 {

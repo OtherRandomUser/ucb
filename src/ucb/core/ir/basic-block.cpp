@@ -1,5 +1,8 @@
 #include <ucb/core/ir/basic-block.hpp>
 
+#include <ucb/core/ir/procedure.hpp>
+
+
 namespace ucb
 {
     CompileUnit* BasicBlock::context()
