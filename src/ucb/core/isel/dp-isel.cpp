@@ -36,7 +36,7 @@ namespace ucb
     {
         if (debug)
         {
-            std::cout << "instruction selection for basic block:\n\n";
+            std::cout << "instruction selection for basic block:\n";
             bblock.dump(std::cout);
             std::cout << std::endl;
         }
@@ -81,14 +81,14 @@ namespace ucb
                 dk = DagDefKind::DDK_NONE;
             }
 
-            std::cout << "n ty " << inst.ty().val << std::endl;
+            //std::cout << "n ty " << inst.ty().val << std::endl;
             auto n = std::make_shared<DagNode>(order++, inst.op(), dk, inst.ty(), inst.id());
 
             for (auto& op: inst.opnds())
             {
                 if (op.is_def())
                 {
-                    std::cout << "nreg " << op.get_virtual_reg() << std::endl;
+                    //std::cout << "nreg " << op.get_virtual_reg() << std::endl;
                     n->reg() = op.get_virtual_reg();
                     continue;
                 }
@@ -101,7 +101,7 @@ namespace ucb
                     assert(false && "unreachable");
 
                 case OperandKind::OK_VIRTUAL_REG:
-                    std::cout << "reg id " << op.get_virtual_reg() << " ty " << op.ty().val << std::endl;
+                    //std::cout << "reg id " << op.get_virtual_reg() << " ty " << op.ty().val << std::endl;
                     arg = dag.get_register(op.get_virtual_reg(), op.ty());
                     n->add_arg(arg);
                     break;
@@ -141,6 +141,7 @@ namespace ucb
         if (debug)
         {
             dag.dump(std::cout, *bblock.context());
+            std::cout << std::endl;
         }
 
         // match
@@ -148,7 +149,7 @@ namespace ucb
 
         for (auto n: dag.root_nodes())
         {
-            std::cout << "ROOT NODE" << std::endl;
+            //std::cout << "ROOT NODE" << std::endl;
             recursive_match(n, *bblock.context());
         }
 
@@ -160,13 +161,15 @@ namespace ucb
 
         if (debug)
         {
+            std::cout << "basic block after instruction selection:" << std::endl;
             _target->dump_bblock(bblock, std::cout);
+            std::cout << std::endl;
         }
     }
 
     void DynamicISel::recursive_match(std::shared_ptr<DagNode> n, CompileUnit& context)
     {
-        std::cout << "recursive match" << std::endl;
+        //std::cout << "recursive match" << std::endl;
 
         if (n->is_leaf())
         {

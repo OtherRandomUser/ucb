@@ -114,7 +114,10 @@ namespace ucb
     {
         for (auto& n: _root_nodes)
         {
-            n->dump(out, context);
+            if (n->opc() != InstrOpcode::OP_NONE)
+            {
+                n->dump(out, context);
+            }
         }
     }
 }

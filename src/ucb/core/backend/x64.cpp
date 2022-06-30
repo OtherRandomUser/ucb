@@ -1760,13 +1760,13 @@ namespace ucb::x64
                     {
                         int ret_idx = 0, arg_idx = 0;
 
-                            std::cout << "!!!OPND!!! " << std::endl;
+                            //std::cout << "!!!OPND!!! " << std::endl;
 
                         if (opnd.is_def)
                         {
                             auto ret_reg = RETURN_REGISTERS[arg_idx++];
 
-                            std::cout << "ret!!! " << ret_reg.val << std::endl;
+                            //std::cout << "ret!!! " << ret_reg.val << std::endl;
 
                             if (std::bit_cast<RegisterID>(opnd.val).val != ret_reg.val)
                             {
@@ -1788,7 +1788,7 @@ namespace ucb::x64
                         {
                             auto arg_reg = ARG_REGISTERS[arg_idx++];
 
-                            std::cout << "arg!!! " << arg_reg.val << std::endl;
+                            //std::cout << "arg!!! " << arg_reg.val << std::endl;
 
                             auto move_to_arg_reg = [&](auto opc)
                             {
@@ -1845,7 +1845,7 @@ namespace ucb::x64
         {
             auto& proc = *proc_ptr;
 
-            dump_proc(proc, std::cout);
+            //dump_proc(proc, std::cout);
 
             out
                 << "\t.globl\t" << proc.id() << "\n"

@@ -36,12 +36,13 @@ namespace  ucb
                     // simplify
                     while (true)
                     {
-                        std::cout << "simplify" << std::endl;
+                        //std::cout << "simplify" << std::endl;
                         auto n = ig.pop_node(k);
 
                         if (n.has_value())
                         {
-                            std::cout << "popped node:" << std::endl;
+                            //std::cout << "popped node:" << std::endl;
+                            std::cout << "simplify" << std::endl;
                             ig.dump();
                             stack.push_back(std::move(n.value()));
                         }
@@ -79,25 +80,25 @@ namespace  ucb
                                 }
                             }
 
-                            std::cout << "proc after removeing moves:\n";
-                            _target->dump_proc(*proc, std::cout);
+                            //std::cout << "proc after removeing moves:\n";
+                            //_target->dump_proc(*proc, std::cout);
                         }
                     }
                     // freeze
                     else if (!ig.freeze_move())
                     {
-                        std::cout << "potential spill?" << std::endl;
+                        //std::cout << "potential spill?" << std::endl;
                         // potential spill
                         if (!ig.empty() && !ig.can_simplify())
                         {
-                            std::cout << "potential spill!" << std::endl;
+                            //std::cout << "potential spill!" << std::endl;
                             auto n = ig.pop_highest_degree();
                             stack.push_back(std::move(n.value()));
                         }
                     }
                 }
 
-                std::cout << "select phase" << std::endl;
+                //std::cout << "select phase" << std::endl;
 
                 // select
                 while (!stack.empty())
@@ -147,7 +148,7 @@ namespace  ucb
                     {
                         if (n.keys.size() != 1)
                         {
-                            std::cerr << "merged a node of significant degree" << std::endl;
+                            //std::cerr << "merged a node of significant degree" << std::endl;
                             abort();
                         }
 
@@ -191,7 +192,7 @@ namespace  ucb
     {
         for (auto& bblock: proc.bblocks())
         {
-            std::cout << "select on bblock" << std::endl;
+            //std::cout << "select on bblock" << std::endl;
 
             for (auto& inst: bblock.machine_insts())
             {
@@ -204,7 +205,7 @@ namespace  ucb
                     if (!is_physical_reg(reg))
                     {
                         auto p = ig.get(reg).physical_register;
-                        std::cout << "reg " << reg.val << " phys " << p.val << std::endl;
+                        //std::cout << "reg " << reg.val << " phys " << p.val << std::endl;
                         opnd.val = std::bit_cast<std::uint64_t>(p);
                     }
                 }

@@ -160,7 +160,7 @@ namespace ucb
         {
             if (is_va_pat)
             {
-                std::cout << "args size: " << n->args().size() << std::endl;
+                //std::cout << "args size: " << n->args().size() << std::endl;
                 for (auto arg: n->args())
                 {
                     assert(arg != nullptr);
